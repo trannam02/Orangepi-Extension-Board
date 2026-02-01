@@ -1,0 +1,2 @@
+../Core/Src/uart.c:10:6:uartManualInit	1
+../Core/Src/uart.c:15:6:uart1ProcessWhenIdleFlag	2

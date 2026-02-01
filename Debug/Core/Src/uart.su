@@ -1,0 +1,2 @@
+../Core/Src/uart.c:10:6:uartManualInit	8	static
+../Core/Src/uart.c:15:6:uart1ProcessWhenIdleFlag	16	static

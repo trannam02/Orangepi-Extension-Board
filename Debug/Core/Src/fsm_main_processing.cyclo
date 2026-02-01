@@ -1,0 +1,2 @@
+../Core/Src/fsm_main_processing.c:5:6:main_processing_init	1
+../Core/Src/fsm_main_processing.c:8:6:main_processing_run	10
