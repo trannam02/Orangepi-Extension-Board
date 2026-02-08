@@ -11,6 +11,17 @@
 
 #include <main.h>
 #include <soft_timer.h>
+#include <uart.h>
+#include <logger.h>
+
+/////////////////////// DEFINE ///////////////
+// for uplink
+#define O_UPLINK_TX_MAX_BUFFER_SIZE 100
+#define O_UPLINK_MAX_QUEUE_SIZE 10
+
+// for RS485 downlink
+#define O_RS485_TX_MAX_BUFFER_SIZE 100
+#define O_RS485_MAX_QUEUE_SIZE 10
 
 // for main state machine
 #define STATE_OUTPUT_INIT 1
@@ -25,8 +36,20 @@
 #define LED_CODE_BLINK_1HZ 3
 #define LED_CODE_BLINK_5HZ 4
 
+
+/////////////////////// EXTERN ///////////////
 extern uint8_t outputLedType;
 
+// for rs485 downlink
+extern uint8_t o_RS485Queue[O_RS485_MAX_QUEUE_SIZE][O_RS485_TX_MAX_BUFFER_SIZE + 1];
+extern uint8_t o_RS485QueueIndex;
+extern uint8_t o_RS485QueueNumEl;
+
+
+
+/////////////////////// FUNCTION ///////////////
 void output_processing_init();
 void output_processing_run();
+
+
 #endif /* INC_FSM_OUTPUT_PROCESSING_H_ */

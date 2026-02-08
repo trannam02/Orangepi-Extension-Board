@@ -1,2 +1,2 @@
-../Core/Src/fsm_main_processing.c:5:6:main_processing_init	4	static
-../Core/Src/fsm_main_processing.c:8:6:main_processing_run	16	static
+../Core/Src/fsm_main_processing.c:7:6:main_processing_init	4	static
+../Core/Src/fsm_main_processing.c:10:6:main_processing_run	72	static

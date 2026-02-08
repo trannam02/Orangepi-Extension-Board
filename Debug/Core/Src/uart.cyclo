@@ -1,2 +1,4 @@
-../Core/Src/uart.c:10:6:uartManualInit	1
-../Core/Src/uart.c:15:6:uart1ProcessWhenIdleFlag	2
+../Core/Src/uart.c:16:6:uartManualInit	1
+../Core/Src/uart.c:22:6:HAL_UART_TxCpltCallback	2
+../Core/Src/uart.c:55:6:uart1ProcessWhenIdleFlag	3
+../Core/Src/uart.c:86:6:HAL_UART_ErrorCallback	2

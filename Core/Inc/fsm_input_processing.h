@@ -8,6 +8,7 @@
 #include <string.h>
 #include <uart.h>
 #include <button.h>
+#include <logger.h>
 
 #define RS485_MAX_QUEUE 10
 
@@ -19,9 +20,9 @@
 #define STATE_INPUT_KNX_UART2_RECEIVE 4
 #define STATE_INPUT_BUTTON_PRESS 5
 
-extern uint8_t rs485NumEl;
-extern uint8_t rs485Queue[RX_MAX_BUFFER_SIZE + 1][RS485_MAX_QUEUE];
-extern uint8_t rs485QueueIndex;
+extern uint8_t i_rs485NumEl;
+extern uint8_t i_rs485Queue[RS485_MAX_QUEUE][RX_MAX_BUFFER_SIZE + 1];
+extern uint8_t i_rs485QueueIndex;
 
 extern uint8_t inputBtn1PressFlag;
 
