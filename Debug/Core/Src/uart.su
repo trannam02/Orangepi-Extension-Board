@@ -1,4 +1,4 @@
-../Core/Src/uart.c:16:6:uartManualInit	8	static
-../Core/Src/uart.c:22:6:HAL_UART_TxCpltCallback	16	static
-../Core/Src/uart.c:55:6:uart1ProcessWhenIdleFlag	24	static
-../Core/Src/uart.c:86:6:HAL_UART_ErrorCallback	16	static
+../Core/Src/uart.c:30:6:uartManualInit	8	static
+../Core/Src/uart.c:45:6:uart1ProcessWhenIdleFlag	24	static
+../Core/Src/uart.c:77:6:uart2ProcessWhenIdleFlag	24	static
+../Core/Src/uart.c:107:6:uart3ProcessWhenIdleFlag	24	static

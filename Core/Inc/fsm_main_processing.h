@@ -6,8 +6,15 @@
 #include <string.h>
 #include <fsm_input_processing.h>
 #include <fsm_output_processing.h>
-
+#include <crc.h>
 // USER SETTING
+
+#define HEADER_RS485 0x07
+#define HEADER_KNX 0x01
+#define HEADER_ERROR_SYS 0x02
+#define HEADER_RESET 0x03
+#define HEADER_KNX_ERROR 0x04
+
 
 #define STATE_INIT 1
 #define STATE_WAITTING 2

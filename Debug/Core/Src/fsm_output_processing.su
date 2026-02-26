@@ -1,3 +1,6 @@
-../Core/Src/fsm_output_processing.c:21:6:output_processing_init	8	static
-../Core/Src/fsm_output_processing.c:26:6:output_processing_run	40	static
-../Core/Src/fsm_output_processing.c:126:6:outputLed	8	static
+../Core/Src/fsm_output_processing.c:28:6:output_processing_init	8	static
+../Core/Src/fsm_output_processing.c:32:6:output_processing_run	16	static
+../Core/Src/fsm_output_processing.c:53:6:outputUPLINK	40	static
+../Core/Src/fsm_output_processing.c:98:6:outputKNX	40	static
+../Core/Src/fsm_output_processing.c:139:6:outputRS485	40	static
+../Core/Src/fsm_output_processing.c:181:6:outputLed	8	static

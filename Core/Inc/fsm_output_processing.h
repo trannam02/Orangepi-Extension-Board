@@ -15,6 +15,11 @@
 #include <logger.h>
 
 /////////////////////// DEFINE ///////////////
+// concurency rate (1-max queue)
+// 1 			= max
+// max queue 	= min
+#define CONCURENCY_RATE 2
+
 // for uplink
 #define O_UPLINK_TX_MAX_BUFFER_SIZE 100
 #define O_UPLINK_MAX_QUEUE_SIZE 10
@@ -22,6 +27,10 @@
 // for RS485 downlink
 #define O_RS485_TX_MAX_BUFFER_SIZE 100
 #define O_RS485_MAX_QUEUE_SIZE 10
+
+// for KNX downlink
+#define O_KNX_TX_MAX_BUFFER_SIZE 100
+#define O_KNX_MAX_QUEUE_SIZE 10
 
 // for main state machine
 #define STATE_OUTPUT_INIT 1
@@ -38,14 +47,22 @@
 
 
 /////////////////////// EXTERN ///////////////
-extern uint8_t outputLedType;
+extern uint8_t o_outputLedType;
+
+// for orange pi uplink
+extern uint8_t o_UPLINKQueue[O_KNX_MAX_QUEUE_SIZE][O_KNX_TX_MAX_BUFFER_SIZE + 1];
+extern uint8_t o_UPLINKQueueIndex;
+extern uint8_t o_UPLINKQueueNumEl;
 
 // for rs485 downlink
 extern uint8_t o_RS485Queue[O_RS485_MAX_QUEUE_SIZE][O_RS485_TX_MAX_BUFFER_SIZE + 1];
 extern uint8_t o_RS485QueueIndex;
 extern uint8_t o_RS485QueueNumEl;
 
-
+// for knx downlink
+extern uint8_t o_KNXQueue[O_KNX_MAX_QUEUE_SIZE][O_KNX_TX_MAX_BUFFER_SIZE + 1];
+extern uint8_t o_KNXQueueIndex;
+extern uint8_t o_KNXQueueNumEl;
 
 /////////////////////// FUNCTION ///////////////
 void output_processing_init();
