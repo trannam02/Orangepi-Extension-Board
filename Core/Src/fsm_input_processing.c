@@ -56,7 +56,7 @@ void input_processing_run(){
 					state = STATE_INPUT_WAITTING;
 					break;
 				}
-				memcpy(i_ORPQueue[i_ORPQueueIndex], uart2RxBuffer, strlen(uart2RxBuffer) + 1); // queue index la vi tri van con trong
+				memcpy(i_ORPQueue[i_ORPQueueIndex], uart2RxBuffer, uart2RxBuffer[0]); // queue index la vi tri van con trong
 				i_ORPQueueIndex = (i_ORPQueueIndex + 1) % I_ORP_MAX_QUEUE_SIZE;
 				i_ORPNumEl = (i_ORPNumEl >= I_ORP_MAX_QUEUE_SIZE) ? I_ORP_MAX_QUEUE_SIZE : i_ORPNumEl + 1;
 
@@ -72,7 +72,7 @@ void input_processing_run(){
 					state = STATE_INPUT_WAITTING;
 					break;
 				}
-				memcpy(i_rs485Queue[i_rs485QueueIndex], uart1RxBuffer, strlen(uart1RxBuffer) + 1); // queue index la vi tri van con trong
+				memcpy(i_rs485Queue[i_rs485QueueIndex], uart1RxBuffer, uart1RxBuffer[1]); // queue index la vi tri van con trong
 				i_rs485QueueIndex = (i_rs485QueueIndex + 1) % RS485_MAX_QUEUE;
 				i_rs485NumEl = (i_rs485NumEl >= RS485_MAX_QUEUE) ? RS485_MAX_QUEUE : i_rs485NumEl + 1;
 
@@ -88,7 +88,7 @@ void input_processing_run(){
 					state = STATE_INPUT_WAITTING;
 					break;
 				}
-				memcpy(i_KNXQueue[i_KNXQueueIndex], uart3RxBuffer, strlen(uart3RxBuffer) + 1); // queue index la vi tri van con trong
+				memcpy(i_KNXQueue[i_KNXQueueIndex], uart3RxBuffer, uart3RxBuffer[1]); // queue index la vi tri van con trong
 				i_KNXQueueIndex = (i_KNXQueueIndex + 1) % I_KNX_MAX_QUEUE_SIZE;
 				i_KNXNumEl = (i_KNXNumEl >= I_KNX_MAX_QUEUE_SIZE) ? I_KNX_MAX_QUEUE_SIZE : i_KNXNumEl + 1;
 

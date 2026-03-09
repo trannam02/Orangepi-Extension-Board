@@ -31,16 +31,13 @@ void uartManualInit(){
 	HAL_UART_Receive_DMA(&huart1, dmaUart1RxBuffer, RX_MAX_BUFFER_SIZE);
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 
-//	HAL_UART_Receive_DMA(&huart2, dmaUart2RxBuffer, RX_MAX_BUFFER_SIZE);
-//	__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+	HAL_UART_Receive_DMA(&huart2, dmaUart2RxBuffer, RX_MAX_BUFFER_SIZE);
+	__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
 
 	HAL_UART_Receive_DMA(&huart3, dmaUart3RxBuffer, RX_MAX_BUFFER_SIZE);
 	__HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
 };
 
-//void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-//{
-//}
 
 void uart1ProcessWhenIdleFlag(){
 	__HAL_UART_CLEAR_IDLEFLAG(&huart1);
@@ -55,23 +52,24 @@ void uart1ProcessWhenIdleFlag(){
 
     if (newPos > oldPos1) {
         len = newPos - oldPos1;
-        memcpy(uart1RxBuffer, &dmaUart1RxBuffer[oldPos1], len);
+        memcpy(&uart1RxBuffer[1], &dmaUart1RxBuffer[oldPos1], len);
+        uart1RxBuffer[0] = (uint8_t)len;
     }else {
         uint16_t len1 = RX_MAX_BUFFER_SIZE - oldPos1;
         uint16_t len2 = newPos;
 
         len = len1 + len2;
 
-        memcpy(uart1RxBuffer, &dmaUart1RxBuffer[oldPos1], len1);
-        memcpy(&uart1RxBuffer[len1], &dmaUart1RxBuffer[0], len2);
+        memcpy(&uart1RxBuffer[1], &dmaUart1RxBuffer[oldPos1], len1);
+        memcpy(&uart1RxBuffer[1 + len1], &dmaUart1RxBuffer[0], len2);
+        uart1RxBuffer[0] = (uint8_t)len;
     }
 
-    uart1RxBuffer[len] = '\0';
     uart1RxFlag = 1;
 
     oldPos1 = newPos;
 
-    LOG_DEBUG("HEHE");
+    LOG_DEBUG("uart 1");
 }
 
 void uart2ProcessWhenIdleFlag(){
@@ -87,21 +85,23 @@ void uart2ProcessWhenIdleFlag(){
 
     if (newPos > oldPos2) {
         len = newPos - oldPos2;
-        memcpy(uart2RxBuffer, &dmaUart2RxBuffer[oldPos2], len);
+        memcpy(&uart2RxBuffer[1], &dmaUart2RxBuffer[oldPos2], len);
+        uart2RxBuffer[0] = (uint8_t)len;
     }else {
         uint16_t len1 = RX_MAX_BUFFER_SIZE - oldPos2;
         uint16_t len2 = newPos;
 
         len = len1 + len2;
 
-        memcpy(uart2RxBuffer, &dmaUart2RxBuffer[oldPos2], len1);
-        memcpy(&uart2RxBuffer[len1], &dmaUart2RxBuffer[0], len2);
+        memcpy(&uart2RxBuffer[1], &dmaUart2RxBuffer[oldPos2], len1);
+        memcpy(&uart2RxBuffer[1 + len1], &dmaUart2RxBuffer[0], len2);
+        uart2RxBuffer[0] = (uint8_t)len;
     }
 
-    uart2RxBuffer[len] = '\0';
     uart2RxFlag = 1;
 
     oldPos2 = newPos;
+    LOG_DEBUG("uart 2");
 }
 
 void uart3ProcessWhenIdleFlag(){
@@ -117,19 +117,21 @@ void uart3ProcessWhenIdleFlag(){
 
     if (newPos > oldPos3) {
         len = newPos - oldPos3;
-        memcpy(uart3RxBuffer, &dmaUart3RxBuffer[oldPos3], len);
+        memcpy(&uart3RxBuffer[1], &dmaUart3RxBuffer[oldPos3], len);
+        uart3RxBuffer[0] = (uint8_t)len;
     }else {
         uint16_t len1 = RX_MAX_BUFFER_SIZE - oldPos3;
         uint16_t len2 = newPos;
 
         len = len1 + len2;
 
-        memcpy(uart3RxBuffer, &dmaUart3RxBuffer[oldPos3], len1);
-        memcpy(&uart3RxBuffer[len1], &dmaUart3RxBuffer[0], len2);
+        memcpy(&uart3RxBuffer[1], &dmaUart3RxBuffer[oldPos3], len1);
+        memcpy(&uart3RxBuffer[1 + len1], &dmaUart3RxBuffer[0], len2);
+        uart3RxBuffer[0] = (uint8_t)len;
     }
 
-    uart3RxBuffer[len] = '\0';
     uart3RxFlag = 1;
 
     oldPos3 = newPos;
+    LOG_DEBUG("uart 3");
 }

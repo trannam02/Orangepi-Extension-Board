@@ -54,7 +54,7 @@ void outputUPLINK(){
 	uint8_t pos = (o_UPLINKQueueIndex + O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl) % O_UPLINK_MAX_QUEUE_SIZE;
 	if(o_UPLINKQueueNumEl > 0){
 		// Lấy độ dài trước cho gọn
-		uint16_t len = strlen((char*)o_UPLINKQueue[pos]);
+		uint16_t len = o_UPLINKQueue[pos][0];
 		if(len <= 0){
 			o_UPLINKQueueNumEl = o_UPLINKQueueNumEl - 1;
 			LOG_DEBUG("Warning: Package len=%d - skipped", len);
@@ -73,7 +73,7 @@ void outputUPLINK(){
 		LOG_DEBUG("---------------------------------------------");
 
 
-		HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart2, o_UPLINKQueue[pos], len);
+		HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart2, &o_UPLINKQueue[pos][1], len);
 
 		if (status == HAL_OK) {
 			// Chỉ khóa cờ khi DMA thực sự đã bắt đầu chạy
@@ -99,7 +99,7 @@ void outputKNX(){
 	uint8_t pos = (o_KNXQueueIndex + O_KNX_MAX_QUEUE_SIZE - o_KNXQueueNumEl) % O_KNX_MAX_QUEUE_SIZE;
 	if(o_KNXQueueNumEl > 0){
 		// Lấy độ dài trước cho gọn
-		uint16_t len = strlen((char*)o_KNXQueue[pos]);
+		uint16_t len = o_KNXQueue[pos][0];
 
 		// GỌI HÀM VÀ KIỂM TRA KẾT QUẢ
 		LOG_INFO("DMA Transmit: data=%s len=%d pos=%d\n", o_KNXQueue[pos], len, pos);
@@ -114,7 +114,7 @@ void outputKNX(){
 		LOG_DEBUG("---------------------------------------------");
 
 
-		HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart3, o_KNXQueue[pos], len);
+		HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart3, &o_KNXQueue[pos][1], len);
 
 		if (status == HAL_OK) {
 			// Chỉ khóa cờ khi DMA thực sự đã bắt đầu chạy
@@ -140,7 +140,7 @@ void outputRS485(){
 	uint8_t pos = (o_RS485QueueIndex + O_RS485_MAX_QUEUE_SIZE - o_RS485QueueNumEl) % O_RS485_MAX_QUEUE_SIZE;
 	if(o_RS485QueueNumEl > 0){
 		// Lấy độ dài trước cho gọn
-		uint16_t len = strlen((char*)o_RS485Queue[pos]);
+		uint16_t len = o_RS485Queue[pos][0];
 
 		// GỌI HÀM VÀ KIỂM TRA KẾT QUẢ
 		LOG_INFO("DMA Transmit: data=%s len=%d pos=%d\n", o_RS485Queue[pos], len, pos);
@@ -155,7 +155,7 @@ void outputRS485(){
 		LOG_DEBUG("---------------------------------------------");
 
 
-		HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart1, o_RS485Queue[pos], len);
+		HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(&huart1, &o_RS485Queue[pos][1], len);
 
 		if (status == HAL_OK) {
 			// Chỉ khóa cờ khi DMA thực sự đã bắt đầu chạy

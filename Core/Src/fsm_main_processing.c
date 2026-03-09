@@ -9,8 +9,7 @@ uint8_t output_write_idx;
 uint8_t payload_size;
 uint8_t current_src;
 uint8_t current_dst;
-//static uint8_t temp_buffer[(O_RS485_TX_MAX_BUFFER_SIZE + 1) * O_RS485_MAX_QUEUE_SIZE];
-//static uint32_t donvi_size = sizeof(uint8_t) * (O_RS485_TX_MAX_BUFFER_SIZE + 1);
+
 void main_processing_init(){
 	state = STATE_INIT;
 };
@@ -49,7 +48,7 @@ void main_processing_run(){
 			// /*TODO*/hien tai, neu output day, thi goi tin nam trong input buffer
 			// se bi bo qua va drop luon
 
-			sl_cp = i_KNXNumEl;
+			sl_cp = i_ORPNumEl;
 			if(sl_cp <= CONCURENCY_RATE){
 				// do nothing
 			}else {
@@ -68,18 +67,18 @@ void main_processing_run(){
 			// Process move data from input queue to output queue
 			if (sl_cp > 0) {
 				// Tail của Input (Gói cũ nhất)
-				input_read_idx = (i_KNXQueueIndex + I_KNX_MAX_QUEUE_SIZE - i_KNXNumEl) % I_KNX_MAX_QUEUE_SIZE;
+				input_read_idx = (i_ORPQueueIndex + I_ORP_MAX_QUEUE_SIZE - i_ORPNumEl) % I_ORP_MAX_QUEUE_SIZE;
 				// Head của Output (Vị trí trống tiếp theo)
 				int rs485_output_write_idx = o_RS485QueueIndex;
 				int knx_output_write_idx = o_KNXQueueIndex;
 
 				for (int i = 0, j = 0, k = 0; i < sl_cp; i++) {
-					current_src = (input_read_idx + i) % I_KNX_MAX_QUEUE_SIZE;
+					current_src = (input_read_idx + i) % I_ORP_MAX_QUEUE_SIZE;
 
 					// Check CRC
 
 					// Check header
-					if(i_ORPQueue[current_src][0] == HEADER_RS485){
+					if(i_ORPQueue[current_src][1] == HEADER_RS485){
 						if(o_RS485QueueNumEl >= O_RS485_MAX_QUEUE_SIZE){
 							continue;
 						};
@@ -87,15 +86,16 @@ void main_processing_run(){
 						current_dst = (rs485_output_write_idx + j) % O_RS485_MAX_QUEUE_SIZE;
 						j += 1;
 
-						payload_size = strlen((uint8_t*)&i_ORPQueue[current_src]) - 1 - 1; // minus 1 for header, 1 for CRC8
-						memcpy(&o_RS485Queue[current_dst], i_ORPQueue[current_src][1], payload_size);
-						o_RS485Queue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_RS485Queue[current_dst], 1+payload_size);
+						payload_size = i_ORPQueue[current_src][0] - 1 - 1; // minus 1 for length, 1 for header, 1 for CRC8
 
-						o_RS485Queue[current_dst][1 + payload_size + 1] = '\0'; // add this for easy output process
+						o_RS485Queue[current_dst][0] = payload_size + 1; // plus 1 for rs485 crc
+						memcpy(&o_RS485Queue[current_dst][1], &i_ORPQueue[current_src][2], payload_size);
+						o_RS485Queue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_RS485Queue[current_dst][1], payload_size);
 
 						o_RS485QueueIndex = (o_RS485QueueIndex + 1) % O_RS485_MAX_QUEUE_SIZE;
 						o_RS485QueueNumEl = o_RS485QueueNumEl + 1;
-					}else if(i_ORPQueue[current_src][0] == HEADER_KNX){
+						LOG_DEBUG("Uplink send data to rs485 successfull %s", o_RS485Queue[current_dst]);
+					}else if(i_ORPQueue[current_src][1] == HEADER_KNX){
 						if(o_KNXQueueNumEl >= O_KNX_MAX_QUEUE_SIZE){
 							continue;
 						};
@@ -103,11 +103,11 @@ void main_processing_run(){
 						current_dst = (knx_output_write_idx + k) % O_KNX_MAX_QUEUE_SIZE;
 						k += 1;
 
-						payload_size = strlen((uint8_t*)&i_ORPQueue[current_src]) - 1 - 1; // minus 1 for header, 1 for CRC8
-						memcpy(&o_KNXQueue[current_dst], i_ORPQueue[current_src][1], payload_size);
-						o_KNXQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_KNXQueue[current_dst], 1+payload_size);
+						payload_size = i_ORPQueue[current_src][0] - 1 - 1; // minus 1 for length, 1 for header, 1 for CRC8
+						o_KNXQueue[current_dst][0] = payload_size + 1; // plus 1 for rs485 crc
+						memcpy(&o_KNXQueue[current_dst][1], &i_ORPQueue[current_src][2], payload_size);
+						o_KNXQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_KNXQueue[current_dst][1], payload_size);
 
-						o_KNXQueue[current_dst][1 + payload_size + 1] = '\0'; // add this for easy output process
 
 						o_KNXQueueIndex = (o_KNXQueueIndex + 1) % O_KNX_MAX_QUEUE_SIZE;
 						o_KNXQueueNumEl = o_KNXQueueNumEl + 1;
@@ -122,13 +122,13 @@ void main_processing_run(){
 			}
 
 
-			LOG_DEBUG("After receive: o_UPLINKQueueNumEl=%d o_UPLINKQueueIndex=%d", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
+			LOG_DEBUG("After receive: o_RS485QueueNumEl=%d o_RS485QueueIndex=%d", o_RS485QueueNumEl, o_RS485QueueIndex);
 			{
-				LOG_DEBUG("--- QUEUE DUMP (Count: %d | Head Index: %d) ---", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-				int tail = (o_UPLINKQueueIndex + O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl) % O_RS485_MAX_QUEUE_SIZE;
-				for (int i = 0; i < o_UPLINKQueueNumEl; i++) {
+				LOG_DEBUG("--- QUEUE DUMP (Count: %d | Head Index: %d) ---", o_RS485QueueNumEl, o_RS485QueueIndex);
+				int tail = (o_RS485QueueIndex + O_RS485_MAX_QUEUE_SIZE - o_RS485QueueNumEl) % O_RS485_MAX_QUEUE_SIZE;
+				for (int i = 0; i < o_RS485QueueNumEl; i++) {
 					int current_pos = (tail + i) % O_RS485_MAX_QUEUE_SIZE;
-					LOG_DEBUG("[%d] %s", current_pos, o_UPLINKQueue[current_pos]);
+					LOG_DEBUG("[%d] %s", current_pos, o_RS485Queue[current_pos]);
 				}
 				LOG_DEBUG("---------------------------------------------");
 			}
@@ -140,7 +140,6 @@ void main_processing_run(){
 			// neu sai crc => drop + noti (ACK)
 
 			// copy all data from rs485 queue to uplink queue
-
 			o_controng = O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl;
 			sl_cp = i_rs485NumEl;
 			if(sl_cp <= o_controng){
@@ -184,15 +183,14 @@ void main_processing_run(){
 			        current_src = (input_read_idx + i) % RS485_MAX_QUEUE;
 			        current_dst = (output_write_idx + i) % O_RS485_MAX_QUEUE_SIZE;
 
-			        o_UPLINKQueue[current_dst][0] = HEADER_RS485; // Byte Header 1
+			        o_UPLINKQueue[current_dst][0] = 1 + i_rs485Queue[current_src][0] - 1 + 1;
+			        o_UPLINKQueue[current_dst][1] = HEADER_RS485; // Byte Header 1
 
-			        payload_size = strlen((uint8_t*)&i_rs485Queue[current_src]);
-			        memcpy(&o_UPLINKQueue[current_dst][1], i_rs485Queue[current_src], payload_size);
-			        // crc8 calc only for header + payload (not for \0)
-			        LOG_DEBUG("HIHIHIHI %s", i_rs485Queue[current_src]);
-			        o_UPLINKQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst], 1+payload_size);
-
-			        o_UPLINKQueue[current_dst][1 + payload_size + 1] = '\0'; // add this for easy output process
+//			        payload_size = strlen((uint8_t*)&i_rs485Queue[current_src]);
+			        payload_size = i_rs485Queue[current_src][0] - 1; // -1 for old crc8
+			        memcpy(&o_UPLINKQueue[current_dst][2], &i_rs485Queue[current_src][1], payload_size);
+			        // crc8 calc only for header + payload
+			        o_UPLINKQueue[current_dst][2 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst][1], 1+payload_size);
 			    }
 
 			    // Process index and number elements
@@ -257,13 +255,20 @@ void main_processing_run(){
 					current_src = (input_read_idx + i) % I_KNX_MAX_QUEUE_SIZE;
 					current_dst = (output_write_idx + i) % O_RS485_MAX_QUEUE_SIZE;
 
-					o_UPLINKQueue[current_dst][0] = HEADER_KNX; // Byte Header 1
+					o_UPLINKQueue[current_dst][0] = 1 + i_KNXQueue[current_src][0] - 1 + 1;
+					o_UPLINKQueue[current_dst][1] = HEADER_KNX; // Byte Header 1
 
-					payload_size = strlen((uint8_t*)&i_KNXQueue[current_src]);
-					memcpy(&o_UPLINKQueue[current_dst][1], i_KNXQueue[current_src], payload_size);
-					o_UPLINKQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst], 1+payload_size);
+//					payload_size = strlen((uint8_t*)&i_KNXQueue[current_src]);
+//					memcpy(&o_UPLINKQueue[current_dst][1], i_KNXQueue[current_src], payload_size);
+//					o_UPLINKQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst], 1+payload_size);
+//
+//					o_UPLINKQueue[current_dst][1 + payload_size + 1] = '\0'; // add this for easy output process
 
-					o_UPLINKQueue[current_dst][1 + payload_size + 1] = '\0'; // add this for easy output process
+					payload_size = i_KNXQueue[current_src][0] - 1;
+					memcpy(&o_UPLINKQueue[current_dst][2], &i_KNXQueue[current_src][1], payload_size);
+					// crc8 calc only for header + payload (not for \0)
+//			        LOG_DEBUG("HIHIHIHI %s", i_rs485Queue[current_src]);
+					o_UPLINKQueue[current_dst][2 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst][1], 1+payload_size);
 				}
 
 				// Process index and number elements

@@ -13,7 +13,6 @@
 #define RS485_MAX_QUEUE 10
 #define I_KNX_MAX_QUEUE_SIZE 10
 #define I_ORP_MAX_QUEUE_SIZE 10
-
 // DEFINE STATE
 #define STATE_INPUT_INIT 1
 #define STATE_INPUT_WAITTING 2
@@ -24,7 +23,7 @@
 
 // for orp
 extern uint8_t i_ORPNumEl;
-extern uint8_t i_ORPQueue[RS485_MAX_QUEUE][RX_MAX_BUFFER_SIZE + 1];
+extern uint8_t i_ORPQueue[I_ORP_MAX_QUEUE_SIZE][RX_MAX_BUFFER_SIZE + 1];
 extern uint8_t i_ORPQueueIndex;
 
 // for rs485
