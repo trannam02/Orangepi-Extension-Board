@@ -1,321 +1,167 @@
-#include <fsm_main_processing.h>
+#include "fsm_main_processing.h"
+#include "fsm_input_processing.h"
+#include "queue_utils.h"
+
+// Khai báo các Queue (External từ các file khác hoặc định nghĩa ở đây)
+extern MessageQueue_t i_ORPQueue;
+extern MessageQueue_t i_rs485Queue;
+extern MessageQueue_t i_KNXQueue;
+extern MessageQueue_t o_RS485Queue;
+extern MessageQueue_t o_KNXQueue;
+extern MessageQueue_t o_UPLINKQueue;
 
 static uint8_t state = STATE_INIT;
 
-uint8_t o_controng;
-uint8_t sl_cp;
-uint8_t input_read_idx;
-uint8_t output_write_idx;
-uint8_t payload_size;
-uint8_t current_src;
-uint8_t current_dst;
+static uint8_t couplerX = 0;
+static uint8_t flag_waiting_response[NUMBER_COUPLER];
+static uint8_t counter = 0;
 
-void main_processing_init(){
-	state = STATE_INIT;
-};
-void main_processing_run(){
-	switch(state){
-		case STATE_INIT:
-		{
-			state = STATE_WAITTING;
-			break;
-		}
-		case STATE_WAITTING:
-		{
-			if(i_ORPNumEl != 0){
-				state = STATE_PROCESS_DOWNLINK;
-				break;
-			};
-			if(i_rs485NumEl != 0){
-				state = STATE_RECEIVE_RS485_FRAME;
-				break;
-			}
-			if(i_KNXNumEl != 0){
-				state = STATE_RECEIVE_KNX_FRAME;
-				break;
-			};
-			if(i_inputBtn1PressFlag){
-				i_inputBtn1PressFlag = 0;
-				state = STATE_BTN_PRESS_5S;
-				break;
-			};
-			break;
-		}
-		case STATE_PROCESS_DOWNLINK:
-		{
-			// neu sai crc => drop + noti (ACK)
-			// check header
-			// /*TODO*/hien tai, neu output day, thi goi tin nam trong input buffer
-			// se bi bo qua va drop luon
+void poll_interval_10ms() {
+    if (getTimer(2) == 1) {
+        clearTimer(2);
 
-			sl_cp = i_ORPNumEl;
-			if(sl_cp <= CONCURENCY_RATE){
-				// do nothing
-			}else {
-				sl_cp = CONCURENCY_RATE;
-			}
+        uint8_t CMD_POLL[6] = {0x06, 0x05, couplerX, 0x00, 0x00, 0x20}; // Lưu ý byte [0] là length
+        // Push thẳng vào Output Queue RS485
+        Queue_Push(&o_RS485Queue, CMD_POLL, CMD_POLL[0]);
 
-			// VAN CON BUG CHO NAY, NEU OUTPUT TRAN, INPUT KHONG COPY QUA,
-			// THI QUAY VE STATE WAITTING ROI LAI NHAY VAO STATE NAY, INFINITY LOOP
-			if(sl_cp <= 0){
-				// do nothing
-				LOG_DEBUG("sl_cp <= 0, skip process");
-				state = STATE_WAITTING;
-				break;
-			}
+        setTimer(3, TEMP_TIMER_3); // Bắt đầu timeout
+    }
 
-			// Process move data from input queue to output queue
-			if (sl_cp > 0) {
-				// Tail của Input (Gói cũ nhất)
-				input_read_idx = (i_ORPQueueIndex + I_ORP_MAX_QUEUE_SIZE - i_ORPNumEl) % I_ORP_MAX_QUEUE_SIZE;
-				// Head của Output (Vị trí trống tiếp theo)
-				int rs485_output_write_idx = o_RS485QueueIndex;
-				int knx_output_write_idx = o_KNXQueueIndex;
+    if (getTimer(3) == 1) {
+        clearTimer(3);
+        counter++;
 
-				for (int i = 0, j = 0, k = 0; i < sl_cp; i++) {
-					current_src = (input_read_idx + i) % I_ORP_MAX_QUEUE_SIZE;
+        if (counter >= MAX_RETRY_POLLING) {
+            counter = 0;
+            couplerX = (couplerX + 1) % NUMBER_COUPLER;
+            setTimer(2, TEMP_TIMER_2); // Trở lại vòng lặp poll thiết bị tiếp theo
+            return;
+        }
 
-					// Check CRC
+        // Retry: Gửi lại
+        uint8_t CMD_POLL[6] = {0x06, 0x05, couplerX, 0x00, 0x00, 0x20};
+        Queue_Push(&o_RS485Queue, CMD_POLL, CMD_POLL[0]);
+        setTimer(3, TEMP_TIMER_3);
+    }
+}
 
-					// Check header
-					if(i_ORPQueue[current_src][1] == HEADER_RS485){
-						if(o_RS485QueueNumEl >= O_RS485_MAX_QUEUE_SIZE){
-							continue;
-						};
+void main_processing_init() {
+    state = STATE_INIT;
+    for (uint8_t i = 0; i < NUMBER_COUPLER; i++) {
+        flag_waiting_response[i] = 0;
+    }
+    setTimer(2, TEMP_TIMER_2);
+}
 
-						current_dst = (rs485_output_write_idx + j) % O_RS485_MAX_QUEUE_SIZE;
-						j += 1;
+void main_processing_run() {
+    uint8_t rxData[MAX_BUFFER_LEN];
+    uint8_t txData[MAX_BUFFER_LEN];
+    uint8_t processed = 0;
 
-						payload_size = i_ORPQueue[current_src][0] - 1 - 1; // minus 1 for length, 1 for header, 1 for CRC8
+    switch (state) {
+        case STATE_INIT:
+            state = STATE_WAITTING;
+            break;
 
-						o_RS485Queue[current_dst][0] = payload_size + 1; // plus 1 for rs485 crc
-						memcpy(&o_RS485Queue[current_dst][1], &i_ORPQueue[current_src][2], payload_size);
-						o_RS485Queue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_RS485Queue[current_dst][1], payload_size);
+        case STATE_WAITTING:
+            if (i_ORPQueue.count > 0) state = STATE_PROCESS_DOWNLINK;
+            else if (i_rs485Queue.count > 0) state = STATE_RECEIVE_RS485_FRAME;
+            else if (i_KNXQueue.count > 0) state = STATE_RECEIVE_KNX_FRAME;
+            else if (i_inputBtn1PressFlag) {
+                i_inputBtn1PressFlag = 0;
+                state = STATE_BTN_PRESS_5S;
+            }
+            break;
 
-						o_RS485QueueIndex = (o_RS485QueueIndex + 1) % O_RS485_MAX_QUEUE_SIZE;
-						o_RS485QueueNumEl = o_RS485QueueNumEl + 1;
-						LOG_DEBUG("Uplink send data to rs485 successfull %s", o_RS485Queue[current_dst]);
-					}else if(i_ORPQueue[current_src][1] == HEADER_KNX){
-						if(o_KNXQueueNumEl >= O_KNX_MAX_QUEUE_SIZE){
-							continue;
-						};
+        case STATE_PROCESS_DOWNLINK:
+            // Lấy từ OrangePi đẩy xuống RS485 hoặc KNX
+            while (processed < CONCURENCY_RATE && Queue_Pop(&i_ORPQueue, rxData)) {
+                // Giả định Format rxData: [Length][Header][Payload...][CRC]
+                uint8_t total_len = rxData[0];
+                uint8_t header = rxData[1];
+                uint8_t payload_size = total_len - 2; // Bỏ length và header (CHÚ Ý 1)
 
-						current_dst = (knx_output_write_idx + k) % O_KNX_MAX_QUEUE_SIZE;
-						k += 1;
+                if (header == HEADER_RS485) {
+                    txData[0] = payload_size + 1; // Length mới = payload + 1 byte CRC
+                    memcpy(&txData[1], &rxData[2], payload_size);
+                    txData[1 + payload_size] = crc8(&txData[1], payload_size);
 
-						payload_size = i_ORPQueue[current_src][0] - 1 - 1; // minus 1 for length, 1 for header, 1 for CRC8
-						o_KNXQueue[current_dst][0] = payload_size + 1; // plus 1 for rs485 crc
-						memcpy(&o_KNXQueue[current_dst][1], &i_ORPQueue[current_src][2], payload_size);
-						o_KNXQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_KNXQueue[current_dst][1], payload_size);
+                    Queue_Push(&o_RS485Queue, txData, txData[0] + 1); // +1 chứa byte length
+                    LOG_DEBUG("Downlink routed to RS485");
 
+                } else if (header == HEADER_KNX) {
+                    txData[0] = payload_size + 1;
+                    memcpy(&txData[1], &rxData[2], payload_size);
+                    txData[1 + payload_size] = crc8(&txData[1], payload_size);
 
-						o_KNXQueueIndex = (o_KNXQueueIndex + 1) % O_KNX_MAX_QUEUE_SIZE;
-						o_KNXQueueNumEl = o_KNXQueueNumEl + 1;
-					}else{ // xu ly cac truong hop khac
+                    Queue_Push(&o_KNXQueue, txData, txData[0] + 1);
+                    LOG_DEBUG("Downlink routed to KNX");
+                }
+                processed++;
+            }
+            state = STATE_WAITTING;
+            break;
 
-					}
+        case STATE_RECEIVE_RS485_FRAME:
+            // Lấy từ RS485 đẩy lên OrangePi
+            while (processed < CONCURENCY_RATE && Queue_Pop(&i_rs485Queue, rxData)) {
+                // Kiểm tra ACK hoặc Response
+//                uint8_t ACK_PACKAGE[6] = {0x06, 0x05, 0x01, 0x00, 0x03, 0x60}; // Sửa byte[0] thành 0x06 để so khớp độ dài
+//                if (memcmp(rxData, ACK_PACKAGE, 6) == 0) {
+//                    LOG_INFO("ACK RECEIVED");
+//                    counter = 0;
+//                    clearTimer(3);
+//                    setTimer(2, TEMP_TIMER_2);
+//                    continue; // Xử lý xong ACK, không đẩy lên OrangePi
+//                } else if (rxData[2] == couplerX) {
+//                    LOG_INFO("RESPONSE RECEIVED");
+//                    counter = 0;
+//                    clearTimer(3);
+//                }
 
-				}
+                // Format up lên Orange Pi: [Length][Header][Payload...][CRC]
+                uint8_t payload_size = rxData[0] - 1; // rxData[0] chứa length gói nhận, trừ 1 byte old CRC
 
-				// Process index and number elements
-				i_ORPNumEl = i_ORPNumEl - sl_cp;
-			}
+                txData[0] = payload_size + 2; // Length = payload + Header + CRC
+                txData[1] = HEADER_RS485;
+                memcpy(&txData[2], &rxData[1], payload_size);
+                txData[2 + payload_size] = crc8(&txData[1], payload_size + 1); // Tính CRC cho Header + Payload
 
+                Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1);
+                processed++;
+            }
+            state = STATE_WAITTING;
+            break;
 
-			LOG_DEBUG("After receive: o_RS485QueueNumEl=%d o_RS485QueueIndex=%d", o_RS485QueueNumEl, o_RS485QueueIndex);
-			{
-				LOG_DEBUG("--- QUEUE DUMP (Count: %d | Head Index: %d) ---", o_RS485QueueNumEl, o_RS485QueueIndex);
-				int tail = (o_RS485QueueIndex + O_RS485_MAX_QUEUE_SIZE - o_RS485QueueNumEl) % O_RS485_MAX_QUEUE_SIZE;
-				for (int i = 0; i < o_RS485QueueNumEl; i++) {
-					int current_pos = (tail + i) % O_RS485_MAX_QUEUE_SIZE;
-					LOG_DEBUG("[%d] %s", current_pos, o_RS485Queue[current_pos]);
-				}
-				LOG_DEBUG("---------------------------------------------");
-			}
-			state = STATE_WAITTING;
-			break;
-		}
-		case STATE_RECEIVE_RS485_FRAME:
-		{
-			// neu sai crc => drop + noti (ACK)
+        case STATE_RECEIVE_KNX_FRAME:
+            // Lấy từ KNX đẩy lên OrangePi
+            while (processed < CONCURENCY_RATE && Queue_Pop(&i_KNXQueue, rxData)) {
+                uint8_t payload_size = rxData[0] - 1;
 
-			// copy all data from rs485 queue to uplink queue
-			o_controng = O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl;
-			sl_cp = i_rs485NumEl;
-			if(sl_cp <= o_controng){
-				// do nothing
-			}else {
-				sl_cp = o_controng;
-			}
+                txData[0] = payload_size + 2;
+                txData[1] = HEADER_KNX;
+                memcpy(&txData[2], &rxData[1], payload_size);
+                txData[2 + payload_size] = crc8(&txData[1], payload_size + 1);
 
-			if(sl_cp <= CONCURENCY_RATE){
-				// do nothing
-			}else {
-				sl_cp = CONCURENCY_RATE;
-			}
+                Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1);
+                processed++;
+            }
+            state = STATE_WAITTING;
+            break;
 
-			// VAN CON BUG CHO NAY, NEU OUTPUT TRAN, INPUT KHONG COPY QUA,
-			// THI QUAY VE STATE WAITTING ROI LAI NHAY VAO STATE NAY, INFINITY LOOP
-			if(sl_cp <= 0){
-				// do nothing
-				LOG_DEBUG("sl_cp <= 0, skip process");
-				state = STATE_WAITTING;
-				break;
-			}
+        case STATE_BTN_PRESS_5S:
+            if (o_outputLedType == LED_CODE_BLINK_5HZ) {
+                o_outputLedType = LED_CODE_OFF;
+            } else {
+                o_outputLedType = LED_CODE_BLINK_5HZ;
+                clearTimer(1);
+                setTimer(1, 200);
+            }
+            state = STATE_WAITTING;
+            break;
 
-			LOG_DEBUG("Before receive: o_UPLINKQueueNumEl=%d o_UPLINKQueueIndex=%d", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-			LOG_DEBUG("--- QUEUE DUMP (Count: %d | Head Index: %d) ---", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-			int tail = (o_UPLINKQueueIndex + O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl) % O_UPLINK_MAX_QUEUE_SIZE;
-			for (int i = 0; i < o_UPLINKQueueNumEl; i++) {
-				int current_pos = (tail + i) % O_UPLINK_MAX_QUEUE_SIZE;
-				LOG_DEBUG("[%d] %s", current_pos, o_UPLINKQueue[current_pos]);
-			}
-			LOG_DEBUG("---------------------------------------------");
-
-			// Process move data from input queue to output queue
-			if (sl_cp > 0) {
-			    // Tail của Input (Gói cũ nhất)
-			    input_read_idx = (i_rs485QueueIndex + RS485_MAX_QUEUE - i_rs485NumEl) % RS485_MAX_QUEUE;
-			    // Head của Output (Vị trí trống tiếp theo)
-			    output_write_idx = o_UPLINKQueueIndex;
-
-			    for (int i = 0; i < sl_cp; i++) {
-			        current_src = (input_read_idx + i) % RS485_MAX_QUEUE;
-			        current_dst = (output_write_idx + i) % O_RS485_MAX_QUEUE_SIZE;
-
-			        o_UPLINKQueue[current_dst][0] = 1 + i_rs485Queue[current_src][0] - 1 + 1;
-			        o_UPLINKQueue[current_dst][1] = HEADER_RS485; // Byte Header 1
-
-//			        payload_size = strlen((uint8_t*)&i_rs485Queue[current_src]);
-			        payload_size = i_rs485Queue[current_src][0] - 1; // -1 for old crc8
-			        memcpy(&o_UPLINKQueue[current_dst][2], &i_rs485Queue[current_src][1], payload_size);
-			        // crc8 calc only for header + payload
-			        o_UPLINKQueue[current_dst][2 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst][1], 1+payload_size);
-			    }
-
-			    // Process index and number elements
-			    i_rs485NumEl = i_rs485NumEl - sl_cp;
-				o_UPLINKQueueIndex = (o_UPLINKQueueIndex + sl_cp) % O_UPLINK_MAX_QUEUE_SIZE;
-				o_UPLINKQueueNumEl = o_UPLINKQueueNumEl + sl_cp;
-			}
-
-
-			LOG_DEBUG("ALO After receive: o_UPLINKQueueNumEl=%d o_UPLINKQueueIndex=%d", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-			{
-				LOG_DEBUG("--- QUEUE DUMP (Count: %d | Head Index: %d) ---", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-				int tail = (o_UPLINKQueueIndex + O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl) % O_RS485_MAX_QUEUE_SIZE;
-				for (int i = 0; i < o_UPLINKQueueNumEl; i++) {
-					int current_pos = (tail + i) % O_RS485_MAX_QUEUE_SIZE;
-					LOG_DEBUG("[%d] %s", current_pos, o_UPLINKQueue[current_pos]);
-				}
-				LOG_DEBUG("---------------------------------------------");
-			}
-
-			state = STATE_WAITTING;
-			break;
-		}
-		case STATE_RECEIVE_KNX_FRAME:
-		{
-			// neu sai crc => drop + noti (ACK)
-
-			o_controng = O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl;
-			sl_cp = i_KNXNumEl;
-			if(sl_cp <= o_controng){
-				// do nothing
-			}else {
-				sl_cp = o_controng;
-			}
-
-			if(sl_cp <= CONCURENCY_RATE){
-				// do nothing
-			}else {
-				sl_cp = CONCURENCY_RATE;
-			}
-
-			// VAN CON BUG CHO NAY, NEU OUTPUT TRAN, INPUT KHONG COPY QUA,
-			// THI QUAY VE STATE WAITTING ROI LAI NHAY VAO STATE NAY, INFINITY LOOP
-			if(sl_cp <= 0){
-				// do nothing
-				LOG_DEBUG("sl_cp <= 0, skip process");
-				state = STATE_WAITTING;
-				break;
-			}
-
-			// Process move data from input queue to output queue
-			if (sl_cp > 0) {
-				// Tail của Input (Gói cũ nhất)
-				input_read_idx = (i_KNXQueueIndex + I_KNX_MAX_QUEUE_SIZE - i_KNXNumEl) % I_KNX_MAX_QUEUE_SIZE;
-				// Head của Output (Vị trí trống tiếp theo)
-				output_write_idx = o_UPLINKQueueIndex;
-
-
-				uint32_t payload_size = O_UPLINK_TX_MAX_BUFFER_SIZE - 1 - 1; // decrease 1 for header, 1 for CRC8
-
-				for (int i = 0; i < sl_cp; i++) {
-					current_src = (input_read_idx + i) % I_KNX_MAX_QUEUE_SIZE;
-					current_dst = (output_write_idx + i) % O_RS485_MAX_QUEUE_SIZE;
-
-					o_UPLINKQueue[current_dst][0] = 1 + i_KNXQueue[current_src][0] - 1 + 1;
-					o_UPLINKQueue[current_dst][1] = HEADER_KNX; // Byte Header 1
-
-//					payload_size = strlen((uint8_t*)&i_KNXQueue[current_src]);
-//					memcpy(&o_UPLINKQueue[current_dst][1], i_KNXQueue[current_src], payload_size);
-//					o_UPLINKQueue[current_dst][1 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst], 1+payload_size);
-//
-//					o_UPLINKQueue[current_dst][1 + payload_size + 1] = '\0'; // add this for easy output process
-
-					payload_size = i_KNXQueue[current_src][0] - 1;
-					memcpy(&o_UPLINKQueue[current_dst][2], &i_KNXQueue[current_src][1], payload_size);
-					// crc8 calc only for header + payload (not for \0)
-//			        LOG_DEBUG("HIHIHIHI %s", i_rs485Queue[current_src]);
-					o_UPLINKQueue[current_dst][2 + payload_size] = crc8((uint8_t*)&o_UPLINKQueue[current_dst][1], 1+payload_size);
-				}
-
-				// Process index and number elements
-				i_KNXNumEl = i_KNXNumEl - sl_cp;
-				o_UPLINKQueueIndex = (o_UPLINKQueueIndex + sl_cp) % O_UPLINK_MAX_QUEUE_SIZE;
-				o_UPLINKQueueNumEl = o_UPLINKQueueNumEl + sl_cp;
-			}
-
-
-			LOG_DEBUG("After receive: o_UPLINKQueueNumEl=%d o_UPLINKQueueIndex=%d", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-			{
-				LOG_DEBUG("--- QUEUE DUMP (Count: %d | Head Index: %d) ---", o_UPLINKQueueNumEl, o_UPLINKQueueIndex);
-				int tail = (o_UPLINKQueueIndex + O_UPLINK_MAX_QUEUE_SIZE - o_UPLINKQueueNumEl) % O_RS485_MAX_QUEUE_SIZE;
-				for (int i = 0; i < o_UPLINKQueueNumEl; i++) {
-					int current_pos = (tail + i) % O_RS485_MAX_QUEUE_SIZE;
-					LOG_DEBUG("[%d] %s", current_pos, o_UPLINKQueue[current_pos]);
-				}
-				LOG_DEBUG("---------------------------------------------");
-			}
-			state = STATE_WAITTING;
-			break;
-		}
-		case STATE_BTN_PRESS_5S: // RESET SYSTEM - ten tam thoi la press 5s
-		{
-			if(o_outputLedType == LED_CODE_BLINK_5HZ){
-				o_outputLedType = LED_CODE_OFF;
-			}else{
-				o_outputLedType = LED_CODE_BLINK_5HZ;
-				clearTimer(1);
-				setTimer(1, 200);
-			}
-
-			state = STATE_WAITTING;
-			break;
-		}
-		default:
-		{
-			break;
-		};
-
-	}
-	// Flag Uart 1 - RX
-
-	// Flag Uart 2 - RX
-
-	// Flag Uart 3 - RX
-
-	// Flag button press 5s
-
-};
+        default:
+            state = STATE_WAITTING;
+            break;
+    }
+}

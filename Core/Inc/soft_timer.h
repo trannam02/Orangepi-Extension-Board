@@ -17,7 +17,7 @@ void timerRun();
 /*
  * Timer 0: Button scanner
  * Timer 1: Led Blink
- *
+ * Timer 2: Polling Package
  *
  * */
 

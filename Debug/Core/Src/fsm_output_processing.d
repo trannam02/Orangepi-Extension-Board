@@ -26,7 +26,8 @@ Core/Src/fsm_output_processing.o: ../Core/Src/fsm_output_processing.c \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h \
  ../Core/Inc/soft_timer.h ../Core/Inc/uart.h ../Core/Inc/logger.h \
- ../Core/Inc/main.h
+ ../Core/Inc/main.h ../Core/Inc/fsm_input_processing.h \
+ ../Core/Inc/button.h ../Core/Inc/queue_utils.h ../Core/Inc/queue_utils.h
 ../Core/Inc/fsm_output_processing.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
@@ -58,3 +59,7 @@ Core/Src/fsm_output_processing.o: ../Core/Src/fsm_output_processing.c \
 ../Core/Inc/uart.h:
 ../Core/Inc/logger.h:
 ../Core/Inc/main.h:
+../Core/Inc/fsm_input_processing.h:
+../Core/Inc/button.h:
+../Core/Inc/queue_utils.h:
+../Core/Inc/queue_utils.h:

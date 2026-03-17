@@ -23,9 +23,16 @@
 #define STATE_BTN_PRESS_5S 5
 #define STATE_PROCESS_DOWNLINK 6
 
+#define NUMBER_COUPLER 3
+#define MAX_RETRY_POLLING 3
+
+#define TEMP_TIMER_2 3000
+#define TEMP_TIMER_3 1000
+
 // END USER SETTING
 
 void main_processing_init();
 void main_processing_run();
+void poll_interval_10ms();
 
 #endif

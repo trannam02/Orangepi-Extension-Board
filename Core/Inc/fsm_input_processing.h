@@ -9,6 +9,7 @@
 #include <uart.h>
 #include <button.h>
 #include <logger.h>
+#include "queue_utils.h"
 
 #define RS485_MAX_QUEUE 10
 #define I_KNX_MAX_QUEUE_SIZE 10
@@ -21,20 +22,37 @@
 #define STATE_INPUT_BUTTON_PRESS 5
 #define STATE_INPUT_ORP_UART2_RECEIVE 6
 
+
+
+
+
+
+
+#define O_UPLINK_TX_MAX_BUFFER_SIZE 100
+#define O_UPLINK_MAX_QUEUE_SIZE 10
+
+// for RS485 downlink
+#define O_RS485_TX_MAX_BUFFER_SIZE 100
+#define O_RS485_MAX_QUEUE_SIZE 10
+
+// for KNX downlink
+#define O_KNX_TX_MAX_BUFFER_SIZE 100
+#define O_KNX_MAX_QUEUE_SIZE 10
+
+
+
+
+
+
+
+
 // for orp
-extern uint8_t i_ORPNumEl;
-extern uint8_t i_ORPQueue[I_ORP_MAX_QUEUE_SIZE][RX_MAX_BUFFER_SIZE + 1];
-extern uint8_t i_ORPQueueIndex;
-
-// for rs485
-extern uint8_t i_rs485NumEl;
-extern uint8_t i_rs485Queue[RS485_MAX_QUEUE][RX_MAX_BUFFER_SIZE + 1];
-extern uint8_t i_rs485QueueIndex;
-
-// for KNX
-extern uint8_t i_KNXQueue[I_KNX_MAX_QUEUE_SIZE][RX_MAX_BUFFER_SIZE + 1];
-extern uint8_t i_KNXQueueIndex;
-extern uint8_t i_KNXNumEl;
+extern MessageQueue_t i_ORPQueue;
+extern MessageQueue_t i_rs485Queue;
+extern MessageQueue_t i_KNXQueue;
+extern MessageQueue_t o_UPLINKQueue;
+extern MessageQueue_t o_RS485Queue;
+extern MessageQueue_t o_KNXQueue;
 
 extern uint8_t i_inputBtn1PressFlag;
 
