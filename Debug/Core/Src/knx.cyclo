@@ -1,0 +1,2 @@
+../Core/Src/knx.c:11:9:knx_checksum	2
+../Core/Src/knx.c:21:9:encode_knx_tpuart	2

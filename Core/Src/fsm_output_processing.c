@@ -7,6 +7,7 @@ extern MessageQueue_t o_UPLINKQueue;
 extern MessageQueue_t o_RS485Queue;
 extern MessageQueue_t o_KNXQueue;
 
+static uint8_t txData[MAX_BUFFER_LEN];
 uint8_t o_outputLedType = 0;
 
 // Function prototype
@@ -29,7 +30,6 @@ void output_processing_run() {
 void outputUPLINK() {
     // Kích hoạt DMA nếu có data trong Queue VÀ phần cứng đang rảnh
     if (o_UPLINKQueue.count > 0 && huart2.gState == HAL_UART_STATE_READY) {
-        uint8_t txData[MAX_BUFFER_LEN];
 
         if (Queue_Pop(&o_UPLINKQueue, txData)) {
             uint8_t len = txData[0]; // Byte 0 định nghĩa sẵn là chiều dài
@@ -43,7 +43,6 @@ void outputUPLINK() {
 
 void outputKNX() {
     if (o_KNXQueue.count > 0 && huart3.gState == HAL_UART_STATE_READY) {
-        uint8_t txData[MAX_BUFFER_LEN];
 
         if (Queue_Pop(&o_KNXQueue, txData)) {
             uint8_t len = txData[0];
@@ -57,13 +56,30 @@ void outputKNX() {
 
 void outputRS485() {
     if (o_RS485Queue.count > 0 && huart1.gState == HAL_UART_STATE_READY) {
-        uint8_t txData[MAX_BUFFER_LEN];
 
         if (Queue_Pop(&o_RS485Queue, txData)) {
             uint8_t len = txData[0];
             if (len > 0) {
                 uart1TxFlag = UART_TX_UN_AVAILABLE_FLAG; // Giữ lại cờ phục vụ logic riêng của bạn
-                LOG_INFO("DMA Transmit RS485 Started: len=%d", len);
+
+                // ==========================================
+                // ĐOẠN FORMAT HEX LOG TRƯỚC KHI TRUYỀN
+                // ==========================================
+                char hexString[128] = {0};
+                int offset = 0;
+
+                // Giới hạn số lượng byte in ra để tránh tràn buffer
+                uint8_t print_len = (len > 40) ? 40 : len;
+
+                // Lặp qua payload (từ index 1 đến len)
+                for(uint8_t i = 1; i <= print_len; i++) {
+                    offset += sprintf(hexString + offset, "%02X ", txData[i]);
+                }
+
+                LOG_WARN("UART1 TX (Len: %d) RAW: %s", len, hexString);
+                // ==========================================
+
+                // Kích hoạt DMA truyền dữ liệu
                 HAL_UART_Transmit_DMA(&huart1, &txData[1], len);
             }
         }

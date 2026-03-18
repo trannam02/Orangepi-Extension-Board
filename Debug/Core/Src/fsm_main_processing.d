@@ -28,7 +28,7 @@ Core/Src/fsm_main_processing.o: ../Core/Src/fsm_main_processing.c \
  ../Core/Inc/fsm_input_processing.h ../Core/Inc/uart.h \
  ../Core/Inc/logger.h ../Core/Inc/main.h ../Core/Inc/button.h \
  ../Core/Inc/soft_timer.h ../Core/Inc/queue_utils.h \
- ../Core/Inc/fsm_output_processing.h ../Core/Inc/crc.h \
+ ../Core/Inc/fsm_output_processing.h ../Core/Inc/crc.h ../Core/Inc/knx.h \
  ../Core/Inc/queue_utils.h
 ../Core/Inc/fsm_main_processing.h:
 ../Core/Inc/main.h:
@@ -66,4 +66,5 @@ Core/Src/fsm_main_processing.o: ../Core/Src/fsm_main_processing.c \
 ../Core/Inc/queue_utils.h:
 ../Core/Inc/fsm_output_processing.h:
 ../Core/Inc/crc.h:
+../Core/Inc/knx.h:
 ../Core/Inc/queue_utils.h:

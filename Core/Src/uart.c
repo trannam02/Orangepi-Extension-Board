@@ -1,4 +1,5 @@
 #include <uart.h>
+#include <stdio.h>
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -101,7 +102,24 @@ void uart2ProcessWhenIdleFlag(){
     uart2RxFlag = 1;
 
     oldPos2 = newPos;
-    LOG_DEBUG("uart 2");
+    // ==========================================
+	// ĐOẠN CODE MỚI THÊM ĐỂ IN RAW DATA (HEX)
+	// ==========================================
+	char hexString[128] = {0}; // Mảng chứa chuỗi in ra (đủ chứa khoảng 40 byte hex)
+	int offset = 0;
+
+	// Giới hạn số lượng byte in ra để tránh tràn mảng hexString nếu gói quá dài
+	uint8_t print_len = (len > 40) ? 40 : len;
+
+	// Lặp qua payload (bắt đầu từ index 1 đến len)
+	for(uint8_t i = 0; i <= print_len; i++) {
+		// %02X giúp in ra số HEX in hoa, có số 0 ở trước nếu < 10 (ví dụ: 0A, 0B)
+		offset += sprintf(hexString + offset, "%02X ", uart2RxBuffer[i]);
+	}
+
+	// In ra tổng số byte nhận được và nội dung chuỗi hex
+	LOG_WARN("UART2 RX (Len: %d) RAW: %s", len, hexString);
+	// ==========================================
 }
 
 void uart3ProcessWhenIdleFlag(){

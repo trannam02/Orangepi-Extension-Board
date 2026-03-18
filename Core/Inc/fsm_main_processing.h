@@ -7,6 +7,7 @@
 #include <fsm_input_processing.h>
 #include <fsm_output_processing.h>
 #include <crc.h>
+#include <knx.h>
 // USER SETTING
 
 #define HEADER_RS485 0x07
@@ -23,11 +24,16 @@
 #define STATE_BTN_PRESS_5S 5
 #define STATE_PROCESS_DOWNLINK 6
 
-#define NUMBER_COUPLER 3
 #define MAX_RETRY_POLLING 3
 
-#define TEMP_TIMER_2 3000
-#define TEMP_TIMER_3 1000
+#define TEMP_TIMER_2 1000
+#define TEMP_TIMER_3 500
+
+// for poll
+#define POLL_STATE_IDLE 0
+#define POLL_STATE_WAIT_RESPONSE 1
+#define NUMBER_COUPLER    3
+
 
 // END USER SETTING
 

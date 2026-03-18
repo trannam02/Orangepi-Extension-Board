@@ -35,7 +35,7 @@ void input_processing_run() {
             if (uart2RxFlag == 1) {
                 uart2RxFlag = 0;
                 // Code cũ của bạn: byte 0 là chiều dài
-                if (!Queue_Push(&i_ORPQueue, uart2RxBuffer, uart2RxBuffer[0])) {
+                if (!Queue_Push(&i_ORPQueue, uart2RxBuffer, uart2RxBuffer[0] + 1)) {
                     LOG_INFO("ORP Input queue overflow, drop package!");
                 }
             }
@@ -44,7 +44,7 @@ void input_processing_run() {
             if (uart1RxFlag == 1) {
                 uart1RxFlag = 0;
                 // CHÚ Ý LỚN: Code cũ của bạn dùng uart1RxBuffer[1] làm chiều dài!
-                if (!Queue_Push(&i_rs485Queue, uart1RxBuffer, uart1RxBuffer[1])) {
+                if (!Queue_Push(&i_rs485Queue, uart1RxBuffer, uart1RxBuffer[0] + 1)) {
                     LOG_INFO("RS485 Input queue overflow, drop package!");
                 }
             }
@@ -53,7 +53,7 @@ void input_processing_run() {
             if (uart3RxFlag == 1) {
                 uart3RxFlag = 0;
                 // CHÚ Ý LỚN: Code cũ của bạn dùng uart3RxBuffer[1] làm chiều dài!
-                if (!Queue_Push(&i_KNXQueue, uart3RxBuffer, uart3RxBuffer[1])) {
+                if (!Queue_Push(&i_KNXQueue, uart3RxBuffer, uart3RxBuffer[0] + 1)) {
                     LOG_INFO("KNX Input queue overflow, drop package!");
                 }
             }

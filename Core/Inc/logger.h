@@ -14,8 +14,8 @@
 
 // --- CẤU HÌNH ---
 // Chọn UART bạn muốn dùng để Log
-extern UART_HandleTypeDef huart2;
-#define LOG_UART &huart2
+extern UART_HandleTypeDef huart1;
+#define LOG_UART &huart1
 
 // --- ĐỊNH NGHĨA CÁC LEVEL ---
 typedef enum {
