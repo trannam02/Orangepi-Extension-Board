@@ -121,13 +121,16 @@ int main(void)
   HAL_TIM_Base_Start_IT (&htim3 );
 
   /////////////////////////// for initialize
+
+  HAL_GPIO_WritePin(KNX_SAVEb_GPIO_Port, KNX_SAVEb_Pin, SET);
+  HAL_GPIO_WritePin(KNX_RESETb_GPIO_Port, KNX_RESETb_Pin, SET);
+
   Log_Init(LOG_LEVEL_WARN);
   uartManualInit();
   button_init();
   input_processing_init();
   main_processing_init();
   output_processing_init();
-
 //  clearTimer(3);
 //  setTimer(3,500);
   /* USER CODE END 2 */
@@ -140,7 +143,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//	  poll_interval_10ms();
 
 	  // read uart 1
 	  // read uart 2
@@ -216,9 +218,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 799;
+  htim3.Init.Prescaler = 31;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 9;
+  htim3.Init.Period = 99;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -325,9 +327,9 @@ static void MX_USART3_UART_Init(void)
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
   huart3.Init.BaudRate = 38400;
-  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.WordLength = UART_WORDLENGTH_9B;
   huart3.Init.StopBits = UART_STOPBITS_1;
-  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Parity = UART_PARITY_EVEN;
   huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
@@ -392,7 +394,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LED_DEBUG_KIT_GPIO_Port, LED_DEBUG_KIT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LED_2_Pin|LED_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, KNX_RESETb_Pin|KNX_SAVEb_Pin|LED_2_Pin|LED_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : LED_DEBUG_KIT_Pin */
   GPIO_InitStruct.Pin = LED_DEBUG_KIT_Pin;
@@ -401,17 +403,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_DEBUG_KIT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : KNX_RESETb_Pin KNX_SAVEb_Pin BTN_1_Pin BTN_2_Pin */
-  GPIO_InitStruct.Pin = KNX_RESETb_Pin|KNX_SAVEb_Pin|BTN_1_Pin|BTN_2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LED_2_Pin LED_1_Pin */
-  GPIO_InitStruct.Pin = LED_2_Pin|LED_1_Pin;
+  /*Configure GPIO pins : KNX_RESETb_Pin KNX_SAVEb_Pin LED_2_Pin LED_1_Pin */
+  GPIO_InitStruct.Pin = KNX_RESETb_Pin|KNX_SAVEb_Pin|LED_2_Pin|LED_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BTN_1_Pin BTN_2_Pin */
+  GPIO_InitStruct.Pin = BTN_1_Pin|BTN_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */

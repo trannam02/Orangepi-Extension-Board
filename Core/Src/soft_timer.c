@@ -8,6 +8,11 @@ void setTimer(uint8_t index, uint32_t counter){
 		timerCounter[index] = counter;
 	};
 };
+
+void triggerTimerNow(uint8_t index){
+	timerFlag[index] = 1;
+};
+
 uint8_t getTimer(uint8_t index){
 	if(index >= 0 && index < MAX_TIMER){
 		return timerFlag[index];

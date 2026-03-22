@@ -1,2 +1,2 @@
-../Core/Src/fsm_input_processing.c:15:6:input_processing_init	1
-../Core/Src/fsm_input_processing.c:27:6:input_processing_run	10
+../Core/Src/fsm_input_processing.c:24:6:input_processing_init	1
+../Core/Src/fsm_input_processing.c:36:6:input_processing_run	16

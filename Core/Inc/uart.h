@@ -32,7 +32,7 @@ extern uint8_t uart3RxFlag;
 
 extern uint8_t uart1TxFlag;
 
-
+extern uint8_t dmaUart3RxBuffer[RX_MAX_BUFFER_SIZE + 1];
 
 void uart1ProcessWhenIdleFlag();
 void uart2ProcessWhenIdleFlag();

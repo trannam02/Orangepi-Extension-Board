@@ -28,7 +28,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/main.h ../Core/Inc/button.h \
  ../Core/Inc/fsm_input_processing.h ../Core/Inc/queue_utils.h \
  ../Core/Inc/fsm_main_processing.h ../Core/Inc/fsm_output_processing.h \
- ../Core/Inc/crc.h ../Core/Inc/knx.h
+ ../Core/Inc/knx.h ../Core/Inc/crc.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 ../Core/Inc/stm32f1xx_hal_conf.h:
@@ -64,5 +64,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/queue_utils.h:
 ../Core/Inc/fsm_main_processing.h:
 ../Core/Inc/fsm_output_processing.h:
-../Core/Inc/crc.h:
 ../Core/Inc/knx.h:
+../Core/Inc/crc.h:

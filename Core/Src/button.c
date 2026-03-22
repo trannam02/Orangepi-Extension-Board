@@ -12,12 +12,12 @@ void getKeyInput();
 
 void button_init(){
 	clearTimer(0);
-	setTimer(0, 10);
+	setTimer(0, MS(10));
 };
 void button_run(){
 	if(getTimer(0) == 1){
 		clearTimer(0);
-		setTimer(0, 10);
+		setTimer(0, MS(10));
 		getKeyInput();
 	}
 };

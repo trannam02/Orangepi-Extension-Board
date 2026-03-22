@@ -13,6 +13,7 @@
 #include <soft_timer.h>
 #include <uart.h>
 #include <logger.h>
+#include <knx.h>
 
 /////////////////////// DEFINE ///////////////
 // concurency rate (1-max queue)

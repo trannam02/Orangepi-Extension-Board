@@ -8,6 +8,7 @@
 #include <fsm_output_processing.h>
 #include <crc.h>
 #include <knx.h>
+#include <soft_timer.h>
 // USER SETTING
 
 #define HEADER_RS485 0x07
@@ -26,8 +27,8 @@
 
 #define MAX_RETRY_POLLING 3
 
-#define TEMP_TIMER_2 1000
-#define TEMP_TIMER_3 500
+#define POLL_INTERVAL SEC(1)
+#define POLL_TIMEOUT MS(500)
 
 // for poll
 #define POLL_STATE_IDLE 0
@@ -39,6 +40,6 @@
 
 void main_processing_init();
 void main_processing_run();
-void poll_interval_10ms();
+
 
 #endif

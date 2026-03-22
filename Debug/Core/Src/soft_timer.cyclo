@@ -1,4 +1,5 @@
 ../Core/Src/soft_timer.c:6:6:setTimer	2
-../Core/Src/soft_timer.c:11:9:getTimer	2
-../Core/Src/soft_timer.c:17:6:clearTimer	1
-../Core/Src/soft_timer.c:21:6:timerRun	4
+../Core/Src/soft_timer.c:12:6:triggerTimerNow	1
+../Core/Src/soft_timer.c:16:9:getTimer	2
+../Core/Src/soft_timer.c:22:6:clearTimer	1
+../Core/Src/soft_timer.c:26:6:timerRun	4

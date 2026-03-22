@@ -10,6 +10,7 @@
 #include <button.h>
 #include <logger.h>
 #include "queue_utils.h"
+#include <soft_timer.h>
 
 #define RS485_MAX_QUEUE 10
 #define I_KNX_MAX_QUEUE_SIZE 10
@@ -21,11 +22,6 @@
 #define STATE_INPUT_KNX_UART3_RECEIVE 4
 #define STATE_INPUT_BUTTON_PRESS 5
 #define STATE_INPUT_ORP_UART2_RECEIVE 6
-
-
-
-
-
 
 
 #define O_UPLINK_TX_MAX_BUFFER_SIZE 100

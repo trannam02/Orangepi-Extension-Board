@@ -30,12 +30,12 @@ void poll_processing_run() {
                     LOG_DEBUG("Goi POLL den coupler %d", couplerX);
 
                     clearTimer(3);
-                    setTimer(3, TEMP_TIMER_3); // getTimer(3) dùng làm timer timeout
+                    setTimer(3, POLL_TIMEOUT); // getTimer(3) dùng làm timer timeout
                     poll_state = POLL_STATE_WAIT_RESPONSE;
                 } else {
                     // Nếu Queue đang đầy (kẹt), thử lại sau 1ms
                 	clearTimer(2);
-                    setTimer(2, TEMP_TIMER_2);
+                    setTimer(2, POLL_INTERVAL);
                 }
             }
             break;
@@ -44,12 +44,12 @@ void poll_processing_run() {
         {
             if(getTimer(3) == 1) { // Hết 5ms mà chưa có trạm nào trả lời
                 clearTimer(3);
-                LOG_WARN("POLL Timeout trạm coupler %d", couplerX);
+                LOG_WARN("POLL Timeout coupler %d", couplerX);
 
                 // Tăng index, modulo 3 và chuyển về trạng thái nghỉ 10ms để gọi trạm tiếp theo
                 couplerX = (couplerX + 1) % NUMBER_COUPLER;
                 clearTimer(2);
-                setTimer(2, TEMP_TIMER_2);
+                setTimer(2, POLL_INTERVAL);
                 poll_state = POLL_STATE_IDLE;
             }
             break;
@@ -60,7 +60,7 @@ void poll_processing_run() {
 void main_processing_init() {
     state = STATE_INIT;
     clearTimer(2);
-    setTimer(2, TEMP_TIMER_2);
+    setTimer(2, POLL_INTERVAL);
 }
 
 void main_processing_run() {
@@ -131,7 +131,7 @@ void main_processing_run() {
 //                    LOG_DEBUG("Downlink routed to KNX");
                 	uint8_t* raw_knx_data = &rxData[2];
 
-					uint8_t tpuart_buffer[2 * payload_size];
+					uint8_t tpuart_buffer[2 * payload_size + 10];
 					uint8_t encoded_len = encode_knx_tpuart(raw_knx_data, payload_size, tpuart_buffer);
 
 					// =========================================================
@@ -139,7 +139,7 @@ void main_processing_run() {
 					// =========================================================
 					LOG_WARN("HEHE");
 					char raw_hex[128] = {0};
-					char enc_hex[256] = {0};
+					char enc_hex[256+10] = {0};
 					int offset_raw = 0;
 					int offset_enc = 0;
 
@@ -228,7 +228,7 @@ void main_processing_run() {
                         clearTimer(3); // 1. Hủy Timer Timeout ngay lập tức
                         couplerX = (couplerX + 1) % NUMBER_COUPLER; // 2. Tăng index cho lần sau
                         clearTimer(2);
-                        setTimer(2, TEMP_TIMER_2); // 3. Set nghỉ 10ms trước khi gọi trạm tiếp theo
+                        setTimer(2, POLL_INTERVAL); // 3. Set nghỉ 10ms trước khi gọi trạm tiếp theo
                         poll_state = POLL_STATE_IDLE;  // 4. Đưa FSM Poll về trạng thái chờ
 
                         // NẾU LÀ GÓI ACK RỖNG -> KHÔNG LÀM GÌ CẢ (CHỈ TIẾP TỤC VÒNG LẶP)
@@ -257,10 +257,17 @@ void main_processing_run() {
 
                 uint8_t total_len = rxData[0];
 
+                if(total_len < 5){
+                	LOG_WARN("Drop KNX gargbage len=%d", total_len);
+                	processed++;
+                	continue;
+                }
+
 				uint8_t received_checksum = rxData[total_len];
 				uint8_t calculated_checksum = knx_checksum(&rxData[1], total_len - 1);
 				if (calculated_checksum != received_checksum) {
 					LOG_ERROR("KNX Frame Checksum FAILED! Calc: %02X | Recv: %02X", calculated_checksum, received_checksum);
+					processed++;
 					continue;
 				}
 
@@ -282,7 +289,7 @@ void main_processing_run() {
             } else {
                 o_outputLedType = LED_CODE_BLINK_5HZ;
                 clearTimer(1);
-                setTimer(1, 200);
+                setTimer(1, MS(200));
             }
             state = STATE_WAITTING;
             break;
