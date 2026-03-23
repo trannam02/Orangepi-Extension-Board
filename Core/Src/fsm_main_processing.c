@@ -95,40 +95,26 @@ void main_processing_run() {
                 // Giả định Format rxData: [Length][Header][Payload...][CRC]
                 uint8_t total_len = rxData[0];
                 uint8_t header = rxData[1];
-                uint8_t payload_size = total_len - 2; // Bỏ length (1) và header (1) |   payload   | crc ko can bo (CHÚ Ý 1)
+                uint8_t payload_size = total_len - 2; // length (1) and header (1)
 
-                // =========================================================
-				// ĐOẠN CHECK CRC (THÊM MỚI)
-				// =========================================================
 				uint8_t received_crc = rxData[total_len];
-
-				// LƯU Ý: Bạn cần xem lại OrangePi đang tính CRC cho [Header + Payload] hay chỉ [Payload].
-				// - Nếu tính cho cả Header + Payload: crc8(&rxData[1], payload_size + 1)
-				// - Nếu chỉ tính cho Payload: crc8(&rxData[2], payload_size)
 				uint8_t calculated_crc = crc8(&rxData[1], payload_size + 1);
 
 				if (calculated_crc != received_crc) {
 					LOG_ERROR("ORP Downlink CRC FAILED! Calc: %02X | Recv: %02X. Drop package!", calculated_crc, received_crc);
-					processed++; // Vẫn tính là đã xử lý 1 gói để không kẹt FSM
-					continue;    // Bỏ qua các bước dưới, quay lại đầu vòng while bốc gói tiếp theo
+					processed++;
+					continue;
 				}
-				// =========================================================
 
                 if (header == HEADER_RS485) {
                     txData[0] = payload_size + 1; // Length mới = payload + 1 byte CRC
                     memcpy(&txData[1], &rxData[2], payload_size);
                     txData[1 + payload_size] = crc8(&txData[1], payload_size);
 
-                    Queue_Push(&o_RS485Queue, txData, txData[0] + 1); // +1 chứa byte length
+                    Queue_Push(&o_RS485Queue, txData, txData[0] + 1); // +1 byte length
                     LOG_DEBUG("Downlink routed to RS485");
 
                 } else if (header == HEADER_KNX) {
-//                    txData[0] = payload_size + 1;
-//                    memcpy(&txData[1], &rxData[2], payload_size);
-//                    txData[1 + payload_size] = crc8(&txData[1], payload_size);
-//
-//                    Queue_Push(&o_KNXQueue, txData, txData[0] + 1);
-//                    LOG_DEBUG("Downlink routed to KNX");
                 	uint8_t* raw_knx_data = &rxData[2];
 
 					uint8_t tpuart_buffer[2 * payload_size + 10];
