@@ -79,6 +79,12 @@ static void MX_USART3_UART_Init(void);
 	void HAL_TIM_PeriodElapsedCallback ( TIM_HandleTypeDef * htim ){
 		timerRun();
 	};
+	void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	    if (huart->Instance == USART1) {
+	        HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+//	        is_transmitting = 0;
+	    }
+	}
 /* USER CODE END 0 */
 
 /**
@@ -265,7 +271,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
   huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_RTS;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
@@ -396,6 +402,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, KNX_RESETb_Pin|KNX_SAVEb_Pin|LED_2_Pin|LED_1_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : LED_DEBUG_KIT_Pin */
   GPIO_InitStruct.Pin = LED_DEBUG_KIT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -409,6 +418,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : RS485_EN_Pin */
+  GPIO_InitStruct.Pin = RS485_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(RS485_EN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BTN_1_Pin BTN_2_Pin */
   GPIO_InitStruct.Pin = BTN_1_Pin|BTN_2_Pin;

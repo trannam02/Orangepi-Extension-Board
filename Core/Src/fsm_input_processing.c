@@ -21,6 +21,9 @@ static uint16_t knx_rx_acc_len = 0;          // Chiều dài hiện tại của 
 static uint8_t is_receiving = 0;             // Cờ đánh dấu đang trong quá trình gom mảng
 static uint16_t old_ptr = 0;
 
+static uint8_t out_data[KNX_MAX_ACC_SIZE];
+uint8_t KNX_READ_STATE = 1;
+uint8_t length = 0;
 
 void input_processing_init() {
     // Khởi tạo các hàng đợi
@@ -34,7 +37,7 @@ void input_processing_init() {
     state = STATE_INPUT_WAITTING;
 }
 
-int knx_read(uint8_t *out_data, int max_len)
+void knx_read()
 {
 	switch(KNX_READ_STATE){
 
@@ -53,15 +56,18 @@ int knx_read(uint8_t *out_data, int max_len)
 		{
 			if(getTimer(4)){
 				uint16_t new_ptr = RX_MAX_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(huart3.hdmarx);
-				int length = 0;
+				length = 1;
 
 				// 5. Bốc dữ liệu từ old_ptr đến new_ptr
 				// Dùng vòng lặp while để xử lý dễ dàng trường hợp wrap-around (con trỏ vòng về 0)
-				while (old_ptr != new_ptr && length < max_len)
+				while (old_ptr != new_ptr && length < KNX_MAX_ACC_SIZE)
 				{
 					out_data[length++] = dmaUart3RxBuffer[old_ptr];
 					old_ptr = (old_ptr + 1) % RX_MAX_BUFFER_SIZE;
 				}
+				out_data[0] = length - 1;
+				uart3RxFlag = 1;
+				KNX_READ_STATE = 1;
 			}
 
 			break;
@@ -72,42 +78,43 @@ int knx_read(uint8_t *out_data, int max_len)
 }
 
 void input_processing_run() {
-	if(getTimer(4)){
-		if(is_receiving){
-			// goi tin ket thuc
-
-			knx_rx_acc[0] = knx_rx_acc_len - 1;
-			if (!Queue_Push(&i_KNXQueue, knx_rx_acc, knx_rx_acc[0] + 1)) {
-				LOG_INFO("KNX Input queue overflow, drop package!");
-			}
-
-			// ==========================================
-			// ĐOẠN CODE MỚI THÊM ĐỂ IN RAW DATA (HEX)
-			// ==========================================
-			uint8_t len = knx_rx_acc_len - 1;
-			char hexString[128] = {0}; // Mảng chứa chuỗi in ra (đủ chứa khoảng 40 byte hex)
-			int offset = 0;
-
-			// Giới hạn số lượng byte in ra để tránh tràn mảng hexString nếu gói quá dài
-			uint8_t print_len = (len > 40) ? 40 : len;
-
-			// Lặp qua payload (bắt đầu từ index 1 đến len)
-			for(uint8_t i = 0; i <= print_len; i++) {
-				// %02X giúp in ra số HEX in hoa, có số 0 ở trước nếu < 10 (ví dụ: 0A, 0B)
-				offset += sprintf(hexString + offset, "%02X ", knx_rx_acc[i]);
-			}
-
-			// In ra tổng số byte nhận được và nội dung chuỗi hex
-			LOG_WARN("KNX receive and push (Len: %d): %s", len, hexString);
-				// ==========================================
-
-			is_receiving = 0;
-			knx_rx_acc_len = 0;
-
-
-
-		}
-	}
+//	if(getTimer(4)){
+//		if(is_receiving){
+//			// goi tin ket thuc
+//
+//			knx_rx_acc[0] = knx_rx_acc_len - 1;
+//			if (!Queue_Push(&i_KNXQueue, knx_rx_acc, knx_rx_acc[0] + 1)) {
+//				LOG_INFO("KNX Input queue overflow, drop package!");
+//			}
+//
+//			// ==========================================
+//			// ĐOẠN CODE MỚI THÊM ĐỂ IN RAW DATA (HEX)
+//			// ==========================================
+//			uint8_t len = knx_rx_acc_len - 1;
+//			char hexString[128] = {0}; // Mảng chứa chuỗi in ra (đủ chứa khoảng 40 byte hex)
+//			int offset = 0;
+//
+//			// Giới hạn số lượng byte in ra để tránh tràn mảng hexString nếu gói quá dài
+//			uint8_t print_len = (len > 40) ? 40 : len;
+//
+//			// Lặp qua payload (bắt đầu từ index 1 đến len)
+//			for(uint8_t i = 0; i <= print_len; i++) {
+//				// %02X giúp in ra số HEX in hoa, có số 0 ở trước nếu < 10 (ví dụ: 0A, 0B)
+//				offset += sprintf(hexString + offset, "%02X ", knx_rx_acc[i]);
+//			}
+//
+//			// In ra tổng số byte nhận được và nội dung chuỗi hex
+//			LOG_WARN("KNX receive and push (Len: %d): %s", len, hexString);
+//				// ==========================================
+//
+//			is_receiving = 0;
+//			knx_rx_acc_len = 0;
+//
+//
+//
+//		}
+//	}
+	knx_read();
     switch(state) {
         case STATE_INPUT_INIT:
             input_processing_init();
@@ -136,27 +143,47 @@ void input_processing_run() {
             if (uart3RxFlag == 1) {
 
             	uart3RxFlag = 0;
-				uint8_t fragment_len = uart3RxBuffer[0];
-				// Kiểm tra tránh tràn mảng
-				if (fragment_len > 0 && (knx_rx_acc_len + fragment_len < KNX_MAX_ACC_SIZE)) {
-					// Copy mảnh vỡ (từ index 1) vào vị trí tiếp theo của mảng gom
-					if(knx_rx_acc_len == 0){
-						memcpy(&knx_rx_acc[1], &uart3RxBuffer[1], fragment_len);
-						knx_rx_acc_len = 1;
-					}else{
-						memcpy(&knx_rx_acc[knx_rx_acc_len], &uart3RxBuffer[1], fragment_len);
-					}
-
-					knx_rx_acc_len += fragment_len;
-
-					clearTimer(4);
-					setTimer(4, KNX_RX_TIMEOUT);
-					is_receiving = 1;
-				}
+//				uint8_t fragment_len = uart3RxBuffer[0];
+//				// Kiểm tra tránh tràn mảng
+//				if (fragment_len > 0 && (knx_rx_acc_len + fragment_len < KNX_MAX_ACC_SIZE)) {
+//					// Copy mảnh vỡ (từ index 1) vào vị trí tiếp theo của mảng gom
+//					if(knx_rx_acc_len == 0){
+//						memcpy(&knx_rx_acc[1], &uart3RxBuffer[1], fragment_len);
+//						knx_rx_acc_len = 1;
+//					}else{
+//						memcpy(&knx_rx_acc[knx_rx_acc_len], &uart3RxBuffer[1], fragment_len);
+//					}
+//
+//					knx_rx_acc_len += fragment_len;
+//
+//					clearTimer(4);
+//					setTimer(4, KNX_RX_TIMEOUT);
+//					is_receiving = 1;
+//				}
                 // CHÚ Ý LỚN: Code cũ của bạn dùng uart3RxBuffer[1] làm chiều dài!
-//                if (!Queue_Push(&i_KNXQueue, uart3RxBuffer, uart3RxBuffer[0] + 1)) {
-//                    LOG_INFO("KNX Input queue overflow, drop package!");
-//                }
+                if (!Queue_Push(&i_KNXQueue, out_data, out_data[0] + 1)) {
+                    LOG_INFO("KNX Input queue overflow, drop package!");
+                }
+
+				// ==========================================
+				// ĐOẠN CODE MỚI THÊM ĐỂ IN RAW DATA (HEX)
+				// ==========================================
+				uint8_t len = out_data[0];
+				char hexString[128] = {0}; // Mảng chứa chuỗi in ra (đủ chứa khoảng 40 byte hex)
+				int offset = 0;
+
+				// Giới hạn số lượng byte in ra để tránh tràn mảng hexString nếu gói quá dài
+				uint8_t print_len = (len > 40) ? 40 : len;
+
+				// Lặp qua payload (bắt đầu từ index 1 đến len)
+				for(uint8_t i = 0; i <= print_len; i++) {
+					// %02X giúp in ra số HEX in hoa, có số 0 ở trước nếu < 10 (ví dụ: 0A, 0B)
+					offset += sprintf(hexString + offset, "%02X ", out_data[i]);
+				}
+
+				// In ra tổng số byte nhận được và nội dung chuỗi hex
+				LOG_WARN("KNX receive and push (Len: %d): %s", len, hexString);
+					// ==========================================
             }
 
             // 4. Nhận nút nhấn

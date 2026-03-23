@@ -70,7 +70,7 @@ void uart1ProcessWhenIdleFlag(){
 
     oldPos1 = newPos;
 
-    LOG_DEBUG("uart 1");
+    LOG_WARN("uart 1");
 }
 
 void uart2ProcessWhenIdleFlag(){

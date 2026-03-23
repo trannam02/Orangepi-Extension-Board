@@ -266,9 +266,16 @@ void main_processing_run() {
 				uint8_t received_checksum = rxData[total_len];
 				uint8_t calculated_checksum = knx_checksum(&rxData[1], total_len - 1);
 				if (calculated_checksum != received_checksum) {
-					LOG_ERROR("KNX Frame Checksum FAILED! Calc: %02X | Recv: %02X", calculated_checksum, received_checksum);
-					processed++;
-					continue;
+
+					if(calculated_checksum == 0){ // truong hop nay, knx phan hoi goi da gui + L_Data.con
+//						total_len = total_len - 1;
+						LOG_WARN("KNX ACK of sent package: isACK=%d", rxData[total_len] >> 7);
+					}else{
+						LOG_ERROR("KNX Frame Checksum FAILED! Calc: %02X | Recv: %02X", calculated_checksum, received_checksum);
+						processed++;
+						continue;
+					}
+
 				}
 
 				uint8_t payload_size = total_len;

@@ -27,8 +27,8 @@
 
 #define MAX_RETRY_POLLING 3
 
-#define POLL_INTERVAL SEC(1)
-#define POLL_TIMEOUT MS(500)
+#define POLL_INTERVAL SEC(3)
+#define POLL_TIMEOUT MS(2)
 
 // for poll
 #define POLL_STATE_IDLE 0

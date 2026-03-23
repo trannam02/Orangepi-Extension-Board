@@ -130,6 +130,7 @@ void outputRS485() {
                 // ==========================================
 
                 // Kích hoạt DMA truyền dữ liệu
+                HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, 1);
                 HAL_UART_Transmit_DMA(&huart1, &txData[1], len);
             }
         }
