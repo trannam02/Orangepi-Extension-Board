@@ -19,7 +19,7 @@
 #define PRESSED 1
 #define LONG_PRESSED 2
 
-#define LONG_PRESS_DURATION 100
+#define LONG_PRESS_DURATION 300 // 10ms -- 1 lan, vay 3s se -- 300 lan
 
 
 #define BUTTON_STATE_PRESS 0

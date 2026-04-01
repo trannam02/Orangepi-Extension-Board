@@ -46,17 +46,19 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
-UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart2;
-UART_HandleTypeDef huart3;
-DMA_HandleTypeDef hdma_usart1_rx;
-DMA_HandleTypeDef hdma_usart1_tx;
-DMA_HandleTypeDef hdma_usart2_tx;
-DMA_HandleTypeDef hdma_usart2_rx;
-DMA_HandleTypeDef hdma_usart3_rx;
-DMA_HandleTypeDef hdma_usart3_tx;
+//UART_HandleTypeDef huart1;
+//UART_HandleTypeDef huart2;
+//UART_HandleTypeDef huart3;
+//DMA_HandleTypeDef hdma_usart1_rx;
+//DMA_HandleTypeDef hdma_usart1_tx;
+//DMA_HandleTypeDef hdma_usart2_tx;
+//DMA_HandleTypeDef hdma_usart2_rx;
+//DMA_HandleTypeDef hdma_usart3_rx;
+//DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -70,6 +72,8 @@ static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -85,6 +89,40 @@ static void MX_USART3_UART_Init(void);
 //	        is_transmitting = 0;
 	    }
 	}
+
+	void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+
+		    // Giả sử UART1 là cổng kết nối với RS485 của bạn
+		    if (huart->Instance == USART1) {
+
+		        // 1. Lưu lại mã lỗi để debug (Tùy chọn)
+		        uint32_t error_code = huart->ErrorCode;
+		        LOG_WARN("RS485 UART Hardware Error Detected! Code: 0x%02X", error_code);
+
+		        // 2. Ép phần cứng xóa sạch tất cả các cờ lỗi (Overrun, Noise, Framing)
+		        __HAL_UART_CLEAR_OREFLAG(huart);
+		        __HAL_UART_CLEAR_NEFLAG(huart);
+		        __HAL_UART_CLEAR_FEFLAG(huart);
+		        __HAL_UART_CLEAR_PEFLAG(huart);
+
+		        // 3. Khởi động lại bộ nhận UART (RẤT QUAN TRỌNG)
+		        // Nếu trước đó bạn dùng DMA để nhận, hãy gọi lại lệnh nhận DMA.
+
+
+		        // (Bạn hãy thay thế lệnh khởi động lại bên dưới bằng đúng lệnh bạn dùng ở hàm init)
+		        HAL_UART_AbortReceive(huart); // Dọn dẹp state bị kẹt của HAL
+
+		        // GỌI LỆNH KHỞI ĐỘNG LẠI UART1 NHẬN DỮ LIỆU Ở ĐÂY
+		        // ...
+		        HAL_UART_Receive_DMA(&huart1, dmaUart1RxBuffer, RX_MAX_BUFFER_SIZE);
+		        		        	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+
+		        LOG_WARN("RS485 UART Recovered and Restarted!");
+		    }
+
+		    // Bạn có thể làm tương tự cho UART2 (Orange Pi) và UART3 (KNX)
+		    // để hệ thống miễn nhiễm hoàn toàn với việc rút/cắm dây nóng (Hot-plug).
+		}
 /* USER CODE END 0 */
 
 /**
@@ -121,6 +159,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   /////////////////////////// for timer
@@ -137,12 +177,13 @@ int main(void)
   input_processing_init();
   main_processing_init();
   output_processing_init();
-//  clearTimer(3);
-//  setTimer(3,500);
+  clearTimer(5);
+  setTimer(5,500);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+//  uint8_t state_init = 1;
   while (1)
   {
     /* USER CODE END WHILE */
@@ -155,10 +196,27 @@ int main(void)
 	  // read uart 3
 	  // read buttons
 	  button_run();
+//	  if(getButtonLongPressFlag(0)){
+//		  state_init = 0;
+//	  }
+//	  if(!state_init){
+//	  HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, SET);
+//	  HAL_Delay(500);
+//	  HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, RESET);
+//	  HAL_Delay(500);
+	  if(getTimer(5)){
+		  clearTimer(5);
+		  setTimer(5, 500);
+		  HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+	  }
+//	  if(!state_init){
+//
+//	  }
+		  input_processing_run();
+		  main_processing_run();
+		  output_processing_run();
+//	  };
 
-	  input_processing_run();
-	  main_processing_run();
-	  output_processing_run();
 
 	  // flush data to uart 1
 	  // flush data to uart 2
@@ -203,6 +261,126 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 31;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 1;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 31;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
 }
 
 /**
@@ -266,7 +444,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;

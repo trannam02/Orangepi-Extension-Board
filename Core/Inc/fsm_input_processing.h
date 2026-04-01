@@ -11,6 +11,7 @@
 #include <logger.h>
 #include "queue_utils.h"
 #include <soft_timer.h>
+#include <global.h>
 
 #define RS485_MAX_QUEUE 10
 #define I_KNX_MAX_QUEUE_SIZE 10
@@ -24,15 +25,15 @@
 #define STATE_INPUT_ORP_UART2_RECEIVE 6
 
 
-#define O_UPLINK_TX_MAX_BUFFER_SIZE 100
+#define O_UPLINK_TX_MAX_BUFFER_SIZE 64
 #define O_UPLINK_MAX_QUEUE_SIZE 10
 
 // for RS485 downlink
-#define O_RS485_TX_MAX_BUFFER_SIZE 100
+#define O_RS485_TX_MAX_BUFFER_SIZE 64
 #define O_RS485_MAX_QUEUE_SIZE 10
 
 // for KNX downlink
-#define O_KNX_TX_MAX_BUFFER_SIZE 100
+#define O_KNX_TX_MAX_BUFFER_SIZE 64
 #define O_KNX_MAX_QUEUE_SIZE 10
 
 
@@ -51,6 +52,9 @@ extern MessageQueue_t o_RS485Queue;
 extern MessageQueue_t o_KNXQueue;
 
 extern uint8_t i_inputBtn1PressFlag;
+extern uint8_t i_inputBtn1LongPressFlag;
+extern uint8_t i_inputBtn2PressFlag;
+extern uint8_t i_inputBtn2LongPressFlag;
 
 void input_processing_init();
 void input_processing_run();

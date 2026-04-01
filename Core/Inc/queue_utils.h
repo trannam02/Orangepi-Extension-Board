@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define MAX_BUFFER_LEN 50 // Thay đổi theo kích thước RX_MAX_BUFFER_SIZE của bạn
+#define MAX_BUFFER_LEN 64 // Thay đổi theo kích thước RX_MAX_BUFFER_SIZE của bạn
 
 typedef struct {
     uint8_t buffer[10][MAX_BUFFER_LEN]; // 32 là MAX_QUEUE_SIZE, có thể tùy chỉnh

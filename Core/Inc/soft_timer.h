@@ -6,7 +6,7 @@
 
 // USER SETTING
 
-#define MAX_TIMER 5
+#define MAX_TIMER 6
 #define TICK 100 // 1 tick timer = 100uS
 
 // convert time

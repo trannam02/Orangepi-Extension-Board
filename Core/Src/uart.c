@@ -27,7 +27,6 @@ uint8_t dmaUart3RxBuffer[RX_MAX_BUFFER_SIZE + 1]; // plus 1 for \0
 uint8_t uart3RxBuffer[RX_MAX_BUFFER_SIZE+1];
 uint8_t uart3RxFlag = 0;
 
-uint8_t uart1TxFlag = UART_TX_AVAILABLE_FLAG; // available
 void uartManualInit(){
 	HAL_UART_Receive_DMA(&huart1, dmaUart1RxBuffer, RX_MAX_BUFFER_SIZE);
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
@@ -102,6 +101,24 @@ void uart2ProcessWhenIdleFlag(){
     uart2RxFlag = 1;
 
     oldPos2 = newPos;
+
+    // ==========================================
+        // ĐOẠN CODE GOM CHUỖI LOG MỚI
+        // ==========================================
+//        uint8_t payload_len = uart2RxBuffer[0];
+//        char hexString[128] = {0};
+//        int offset = 0;
+//
+//        // Giới hạn số lượng in ra để không bị tràn mảng chuỗi (nếu gói quá dài)
+//        uint8_t print_len = (payload_len > 40) ? 40 : payload_len;
+//
+//        // Lặp từ 0 đến <= print_len để in trọn vẹn từ byte Length (index 0) đến byte cuối cùng
+//        for(uint8_t i = 0; i <= print_len; i++) {
+//            offset += sprintf(hexString + offset, "%02X ", uart2RxBuffer[i]);
+//        }
+//
+//        LOG_WARN("Downlink receive (Len: %d): %s", payload_len, hexString);
+        // ==========================================
 }
 
 void uart3ProcessWhenIdleFlag(){

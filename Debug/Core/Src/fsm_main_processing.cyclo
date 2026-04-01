@@ -1,3 +1,4 @@
-../Core/Src/fsm_main_processing.c:20:6:poll_processing_run	6
-../Core/Src/fsm_main_processing.c:60:6:main_processing_init	1
-../Core/Src/fsm_main_processing.c:66:6:main_processing_run	37
+../Core/Src/fsm_main_processing.c:22:9:setListCoupler	2
+../Core/Src/fsm_main_processing.c:34:6:poll_processing_run	9
+../Core/Src/fsm_main_processing.c:94:6:main_processing_init	1
+../Core/Src/fsm_main_processing.c:100:6:main_processing_run	51

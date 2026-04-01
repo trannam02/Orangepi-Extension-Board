@@ -7,7 +7,7 @@
 
 
 #include <button.h>
-
+#include <logger.h>
 void getKeyInput();
 
 void button_init(){
@@ -36,6 +36,7 @@ int longPressedFlags[NO_BUTTON] = {0,0};
 
 int getButtonPressFlag(int index){return pressedFlags[index];};
 void setButtonPressFlag(int index, int value){pressedFlags[index] = value;};
+
 int getButtonLongPressFlag(int index){return longPressedFlags[index];};
 void setButtonLongPressFlag(int index, int value){longPressedFlags[index] = value;};
 

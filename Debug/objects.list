@@ -3,6 +3,7 @@
 "./Core/Src/fsm_input_processing.o"
 "./Core/Src/fsm_main_processing.o"
 "./Core/Src/fsm_output_processing.o"
+"./Core/Src/global.o"
 "./Core/Src/knx.o"
 "./Core/Src/logger.o"
 "./Core/Src/main.o"

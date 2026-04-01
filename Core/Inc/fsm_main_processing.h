@@ -9,10 +9,12 @@
 #include <crc.h>
 #include <knx.h>
 #include <soft_timer.h>
+#include <global.h>
 // USER SETTING
 
 #define HEADER_RS485 0x07
 #define HEADER_KNX 0x01
+#define HEADER_COMMAND 0x0E
 #define HEADER_ERROR_SYS 0x02
 #define HEADER_RESET 0x03
 #define HEADER_KNX_ERROR 0x04
@@ -22,13 +24,16 @@
 #define STATE_WAITTING 2
 #define STATE_RECEIVE_KNX_FRAME 3
 #define STATE_RECEIVE_RS485_FRAME 4
-#define STATE_BTN_PRESS_5S 5
-#define STATE_PROCESS_DOWNLINK 6
+
+#define STATE_BTN_1_PRESS 5
+#define STATE_BTN_1_LONGPRESS_3S 6
+
+#define STATE_PROCESS_DOWNLINK 7
 
 #define MAX_RETRY_POLLING 3
 
-#define POLL_INTERVAL SEC(3)
-#define POLL_TIMEOUT MS(2)
+#define POLL_INTERVAL MS(500)
+#define POLL_TIMEOUT MS(100)
 
 // for poll
 #define POLL_STATE_IDLE 0

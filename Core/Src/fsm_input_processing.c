@@ -10,6 +10,10 @@ MessageQueue_t o_RS485Queue;
 MessageQueue_t o_KNXQueue;
 
 uint8_t i_inputBtn1PressFlag = 0;
+uint8_t i_inputBtn1LongPressFlag = 0;
+uint8_t i_inputBtn2PressFlag = 0;
+uint8_t i_inputBtn2LongPressFlag = 0;
+
 static uint8_t state = STATE_INPUT_INIT;
 
 
@@ -33,7 +37,6 @@ void input_processing_init() {
     Queue_Init(&o_UPLINKQueue, O_UPLINK_MAX_QUEUE_SIZE);
     Queue_Init(&o_RS485Queue, O_RS485_MAX_QUEUE_SIZE);
     Queue_Init(&o_KNXQueue, O_KNX_MAX_QUEUE_SIZE);
-
     state = STATE_INPUT_WAITTING;
 }
 
@@ -81,39 +84,59 @@ void input_processing_run() {
     switch(state) {
         case STATE_INPUT_INIT:
             input_processing_init();
+            state = STATE_INPUT_WAITTING;
             break;
 
         case STATE_INPUT_WAITTING:
             // 1. Orange Pi (UART2)
-            if (uart2RxFlag == 1) {
-                uart2RxFlag = 0;
-                if (!Queue_Push(&i_ORPQueue, uart2RxBuffer, uart2RxBuffer[0] + 1)) {
-                    LOG_INFO("ORP Input queue overflow, drop package!");
-                }
-            }
+        	if(system_state == SYSTEM_STATE_RUNNING){
 
-            // 2. RS485 (UART1)
-            if (uart1RxFlag == 1) {
-                uart1RxFlag = 0;
-                if (!Queue_Push(&i_rs485Queue, uart1RxBuffer, uart1RxBuffer[0] + 1)) {
-                    LOG_INFO("RS485 Input queue overflow, drop package!");
-                }
-            }
+				// 2. RS485 (UART1)
+				if (uart1RxFlag == 1) {
+					uart1RxFlag = 0;
+					if (!Queue_Push(&i_rs485Queue, uart1RxBuffer, uart1RxBuffer[0] + 1)) {
+						LOG_INFO("RS485 Input queue overflow, drop package!");
+					}
+				}
 
-            // 3. KNX (UART3)
-            if (uart3RxFlag == 1) {
-            	uart3RxFlag = 0;
-                if (!Queue_Push(&i_KNXQueue, out_data, out_data[0] + 1)) {
-                    LOG_INFO("KNX Input queue overflow, drop package!");
-                }
-            }
+				// 3. KNX (UART3)
+				if (uart3RxFlag == 1) {
+					uart3RxFlag = 0;
+					if (!Queue_Push(&i_KNXQueue, out_data, out_data[0] + 1)) {
+						LOG_INFO("KNX Input queue overflow, drop package!");
+					}
+				}
+        	}
+
+        	// che do nhan config thi duong nay van chay
+        	if (uart2RxFlag == 1) {
+				uart2RxFlag = 0;
+				if (!Queue_Push(&i_ORPQueue, uart2RxBuffer, uart2RxBuffer[0] + 1)) {
+					LOG_INFO("ORP Input queue overflow, drop package!");
+				}
+			}
 
             // 4. Button
             if (getButtonPressFlag(0)) {
                 setButtonPressFlag(0, 0);
                 i_inputBtn1PressFlag = 1;
-                LOG_DEBUG("Input Button Pressed");
+                LOG_DEBUG("Input Button 1 Pressed");
             }
+            if (getButtonPressFlag(1)) {
+				setButtonPressFlag(1, 0);
+				i_inputBtn2PressFlag = 1;
+				LOG_DEBUG("Input Button 1 Long Pressed");
+			}
+            if (getButtonLongPressFlag(0)) {
+				setButtonLongPressFlag(0, 0);
+				i_inputBtn1LongPressFlag = 1;
+				LOG_DEBUG("Input Button 2 Pressed");
+			}
+			if (getButtonLongPressFlag(1)) {
+				setButtonLongPressFlag(1, 0);
+				i_inputBtn2LongPressFlag = 1;
+				LOG_DEBUG("Input Button 2 Long Pressed");
+			}
             break;
 
         default:

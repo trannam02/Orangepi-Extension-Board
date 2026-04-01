@@ -7,7 +7,7 @@
 #include <logger.h>
 // USER SETTING
 
-#define RX_MAX_BUFFER_SIZE 100
+#define RX_MAX_BUFFER_SIZE 64
 #define UART_TX_AVAILABLE_FLAG 1
 #define UART_TX_UN_AVAILABLE_FLAG 0
 
@@ -30,9 +30,9 @@ extern uint8_t uart1RxFlag;
 extern uint8_t uart2RxFlag;
 extern uint8_t uart3RxFlag;
 
-extern uint8_t uart1TxFlag;
-
 extern uint8_t dmaUart3RxBuffer[RX_MAX_BUFFER_SIZE + 1];
+
+extern uint8_t dmaUart1RxBuffer[RX_MAX_BUFFER_SIZE + 1];
 
 void uart1ProcessWhenIdleFlag();
 void uart2ProcessWhenIdleFlag();

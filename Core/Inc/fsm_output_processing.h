@@ -22,15 +22,15 @@
 #define CONCURENCY_RATE 2
 
 // for uplink
-#define O_UPLINK_TX_MAX_BUFFER_SIZE 100
+#define O_UPLINK_TX_MAX_BUFFER_SIZE 64
 #define O_UPLINK_MAX_QUEUE_SIZE 10
 
 // for RS485 downlink
-#define O_RS485_TX_MAX_BUFFER_SIZE 100
+#define O_RS485_TX_MAX_BUFFER_SIZE 64
 #define O_RS485_MAX_QUEUE_SIZE 10
 
 // for KNX downlink
-#define O_KNX_TX_MAX_BUFFER_SIZE 100
+#define O_KNX_TX_MAX_BUFFER_SIZE 64
 #define O_KNX_MAX_QUEUE_SIZE 10
 
 // for main state machine
