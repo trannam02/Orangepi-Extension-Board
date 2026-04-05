@@ -19,6 +19,14 @@ static uint8_t couplerX = 0; // range 0 -> 31
 static uint32_t timeout1 = 0x00;
 static uint32_t timeout2 = 0x00;
 static uint32_t timeout3 = 0x00;
+
+
+#define MSG_TYPE_CMD_POLL       0x00 // 00
+#define MSG_TYPE_CMD_CONTROL    0x01 // 01
+#define MSG_TYPE_RESP_DATA      0x02 // 10
+#define MSG_TYPE_PAYLOAD_EMPTY  0x03 // 11
+
+
 uint8_t setListCoupler(uint8_t * list, uint8_t len){
 	if(len < 32 && len >= 0) {
 		memcpy(coupler_arr, list, len);
@@ -38,7 +46,7 @@ void poll_processing_run() {
             if(getTimer(2) == 1) { // getTimer(2) dùng làm timer đếm 10ms
                 clearTimer(2);
 
-                uint8_t CMD_POLL[6] = {0x04, coupler_arr[couplerX], 0x00, 0x00};
+                uint8_t CMD_POLL[6] = {0x04, MSG_TYPE_CMD_POLL, coupler_arr[couplerX], 0x00};
 
                 CMD_POLL[4] = crc8(&CMD_POLL[1], 3);
 
@@ -95,6 +103,12 @@ void main_processing_init() {
     state = STATE_INIT;
     clearTimer(2);
     setTimer(2, POLL_INTERVAL);
+
+
+    o_outputLedType = LED_CODE_BLINK_5HZ;
+	clearTimer(1);
+	setTimer(1, MS(200));
+	system_state = SYSTEM_STATE_CONFIG;
 }
 
 void main_processing_run() {
@@ -181,6 +195,19 @@ void main_processing_run() {
 
 
 				if (system_state == SYSTEM_STATE_CONFIG){
+
+					// kiem tra xem phai goi tin chuyen ve che do running khong
+					if(rxData[0] == 5 &&
+					   rxData[1] == 0x0E &&
+					   rxData[2] == 0x01 &&
+					   rxData[3] == 0xEF &&
+					   rxData[4] == 0xBE){
+						o_outputLedType = LED_CODE_OFF;
+						system_state = SYSTEM_STATE_RUNNING;
+						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1); // phan hoi goi tuong tu
+						continue;
+					}
+
 					// check goi tin
 					// co tu 1 coupler tro len (len >= 4)
 					// byte dau 0E
@@ -189,6 +216,8 @@ void main_processing_run() {
 						uint8_t numberCoupler = rxData[0] - 3; // -1 for function code, -1 for cmd type, -1 for CRC8
 						setListCoupler(&rxData[3], numberCoupler);
 						number_of_coupler = numberCoupler;
+
+						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1); // phan hoi goi tuong tu
 					}
 					continue;
 				}
@@ -196,17 +225,18 @@ void main_processing_run() {
 
 
                 if (header == HEADER_RS485) {
-                    txData[0] = payload_size + 1; // Length mới = payload + 1 byte CRC
-                    memcpy(&txData[1], &rxData[2], payload_size);
-                    txData[1 + payload_size] = crc8(&txData[1], payload_size);
+                	txData[0] = payload_size + 1 + 1; // Length mới = payload + 1 byte CRC + 1 byte MSG_TYPE_CMD_CONTROL
+                	                    txData[1] = MSG_TYPE_CMD_CONTROL;
+                	                    memcpy(&txData[2], &rxData[2], payload_size);
+                	                    txData[2 + payload_size] = crc8(&txData[1], payload_size + 1); // + 1 for MSG type
 
-                    // +1 byte length
-                    if(Queue_Push(&o_RS485Queue, txData, txData[0] + 1)){
-                    	LOG_WARN("ADD QUEUE OK");
-                    }else{
-                    	LOG_WARN("QUEUE FULL");
-                    }
-                    LOG_WARN("Downlink routed to RS485");
+                	                    // +1 byte length
+                	                    if(Queue_Push(&o_RS485Queue, txData, txData[0] + 1)){
+                	                    	LOG_WARN("ADD QUEUE OK");
+                	                    }else{
+                	                    	LOG_WARN("QUEUE FULL");
+                	                    }
+                	                    LOG_WARN("Downlink routed to RS485");
 
                 } else if (header == HEADER_KNX) {
                 	uint8_t* raw_knx_data = &rxData[2];
@@ -220,18 +250,19 @@ void main_processing_run() {
 					Queue_Push(&o_KNXQueue, txData, encoded_len + 1); // +1 byte length
 					LOG_WARN("Downlink routed to (KNX)");
                 } else if(header == HEADER_COMMAND){
-                	if(0){
+                	if( rxData[1] == 0x0E &&
+                		rxData[2] == 0x01 &&
+						rxData[3] == 0xFE &&
+						rxData[4] == 0xCA){
                 		// chuyen sang che do config
-                	}
-                	if(0){
-                		// if dang trong che do config, thoat khoi che do config, bat dau chay
-                	}
-                	if(0){
-						// if dang trong che do config, nhan goi coupler's list
-					}
-					if(0){
-						// thoat khoi che do config, bat dau chay
-					}
+                		o_outputLedType = LED_CODE_BLINK_5HZ;
+						clearTimer(1);
+						setTimer(1, MS(200));
+						// beef 3 tieng
+						// chuyen sang che do config
+						system_state = SYSTEM_STATE_CONFIG;
+						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1);
+                	};
                 }
             }
             state = STATE_WAITTING;
@@ -265,9 +296,9 @@ void main_processing_run() {
                     bool is_my_ack = false;
                     // Kịch bản 1: Nhận được gói ACK cố định
                     if (	rxData[0] == 0x04 &&
-                    		rxData[1] == coupler_arr[couplerX] &&
-                    		rxData[2] == 0x00 &&
-                    		rxData[3] == 0x03 &&
+                    		rxData[1] == MSG_TYPE_PAYLOAD_EMPTY &&
+                    		rxData[2] == coupler_arr[couplerX] &&
+                    		rxData[3] == 0x00 &&
                     		rxData[4] == crc8(&rxData[1], 3))
                     {
                         is_my_response = true;
@@ -276,8 +307,11 @@ void main_processing_run() {
                     }
                     // Kịch bản 2: Gói data trả về chứa thông tin couplerX
                     // BẮT BUỘC: Đảm bảo độ dài gói tin >= 4 trước khi soi byte index [3]
-                    else if (rxData[0] >= 1 && rxData[1] == coupler_arr[couplerX]) {
-                        is_my_response = true;
+                    else if (rxData[0] >= 2 &&
+                                        		 rxData[1] == MSG_TYPE_RESP_DATA &&
+                                        		 rxData[2] == coupler_arr[couplerX]
+                    							 ) {
+                                            is_my_response = true;
                         LOG_WARN("Nhan DATA phan hoi tu coupler %d", coupler_arr[couplerX]);
                     }else{
                     	LOG_WARN("Nhan pkg nhung k phai data va ack: current couplerid %02X\n", coupler_arr[couplerX]);
