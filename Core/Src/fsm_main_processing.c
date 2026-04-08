@@ -226,17 +226,17 @@ void main_processing_run() {
 
                 if (header == HEADER_RS485) {
                 	txData[0] = payload_size + 1 + 1; // Length mới = payload + 1 byte CRC + 1 byte MSG_TYPE_CMD_CONTROL
-                	                    txData[1] = MSG_TYPE_CMD_CONTROL;
-                	                    memcpy(&txData[2], &rxData[2], payload_size);
-                	                    txData[2 + payload_size] = crc8(&txData[1], payload_size + 1); // + 1 for MSG type
+					txData[1] = MSG_TYPE_CMD_CONTROL;
+					memcpy(&txData[2], &rxData[2], payload_size);
+					txData[2 + payload_size] = crc8(&txData[1], payload_size + 1); // + 1 for MSG type
 
-                	                    // +1 byte length
-                	                    if(Queue_Push(&o_RS485Queue, txData, txData[0] + 1)){
-                	                    	LOG_WARN("ADD QUEUE OK");
-                	                    }else{
-                	                    	LOG_WARN("QUEUE FULL");
-                	                    }
-                	                    LOG_WARN("Downlink routed to RS485");
+					// +1 byte length
+					if(Queue_Push(&o_RS485Queue, txData, txData[0] + 1)){
+						LOG_WARN("ADD QUEUE OK");
+					}else{
+						LOG_WARN("QUEUE FULL");
+					}
+					LOG_WARN("Downlink routed to RS485");
 
                 } else if (header == HEADER_KNX) {
                 	uint8_t* raw_knx_data = &rxData[2];
@@ -335,10 +335,10 @@ void main_processing_run() {
                         }
 
                         // PROCESS DAY DATA LÊN ORANGE PI
-                        txData[0] = payload_size + 2; // Length = payload + Header + CRC
+                        txData[0] = payload_size + 1; // Length = payload + Header + CRC
                         txData[1] = HEADER_RS485;
-                        memcpy(&txData[2], &rxData[1], payload_size);
-                        txData[2 + payload_size] = crc8(&txData[1], payload_size + 1); // Tính CRC cho Header + Payload
+                        memcpy(&txData[2], &rxData[2], payload_size - 1);
+                        txData[3 + payload_size - 1] = crc8(&txData[1], payload_size + 1 - 1); // Tính CRC cho Header + Payload
                         Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1);
                     }
                     // Nếu không phải phản hồi mình cần -> Lệnh continue ngầm (hết vòng lặp)
