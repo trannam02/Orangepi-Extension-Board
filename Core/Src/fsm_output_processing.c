@@ -215,12 +215,13 @@ void outputBuzzer() {
 
     switch(o_outputBuzzerType) {
         case BUZZER_CODE_OFF:
+        	setBuzzerPWM(0);
             break;
 
-        case BUZZER_CODE_SUCCESS:
+        case BUZZER_CODE_FOR_CONNECTED_COUPLER:
             // Kịch bản: Kêu 2kHz (100ms) -> Nghỉ (100ms) -> Kêu 2kHz (100ms) -> Tự tắt
             if (buzzer_step == 0) {
-                setBuzzerPWM(2000); // Tần số 2000Hz (Âm cao)
+                setBuzzerPWM(3000);
                 setTimer(5, MS(100));
                 buzzer_step = 1;
             }
@@ -231,7 +232,7 @@ void outputBuzzer() {
                 buzzer_step = 2;
             }
             else if (buzzer_step == 2 && getTimer(5)) {
-                setBuzzerPWM(2000);
+                setBuzzerPWM(3000);
                 clearTimer(5);
                 setTimer(5, MS(100));
                 buzzer_step = 3;
@@ -241,12 +242,21 @@ void outputBuzzer() {
                 o_outputBuzzerType = BUZZER_CODE_OFF; // Kêu xong thì tự trả về trạng thái OFF
             }
             break;
-
-        case BUZZER_CODE_ERROR:
-            // Kịch bản: Kêu 1 tiếng cực trầm và dài (500ms)
+        case BUZZER_CODE_FOR_DISCONNECTED_COUPLER:
+			if (buzzer_step == 0) {
+				setBuzzerPWM(3000);
+				setTimer(5, MS(100));
+				buzzer_step = 1;
+			}
+			else if (buzzer_step == 1 && getTimer(5)) {
+				setBuzzerPWM(0);
+				o_outputBuzzerType = BUZZER_CODE_OFF; // Kêu xong tự tắt
+			}
+			break;
+        case BUZZER_CODE_FOR_BEEP_1S:
             if (buzzer_step == 0) {
-                setBuzzerPWM(250); // Tần số 250Hz (Âm trầm báo lỗi)
-                setTimer(5, MS(500));
+                setBuzzerPWM(2000);
+                setTimer(5, MS(200));
                 buzzer_step = 1;
             }
             else if (buzzer_step == 1 && getTimer(5)) {
@@ -257,17 +267,7 @@ void outputBuzzer() {
 
         case BUZZER_CODE_ALARM:
             // Kịch bản: Kêu tít tít lặp đi lặp lại vô hạn (Giống chớp LED)
-            if (buzzer_step == 0) {
-                setBuzzerPWM(1000); // 1000Hz
-                setTimer(5, MS(200));
-                buzzer_step = 1;
-            }
-            else if (buzzer_step == 1 && getTimer(5)) {
-                setBuzzerPWM(0);
-                clearTimer(5);
-                setTimer(5, MS(200));
-                buzzer_step = 0; // Quay lại bước 0 để vòng lặp mãi mãi
-            }
+        	setBuzzerPWM(250);
             break;
 
         default:

@@ -122,21 +122,21 @@ void input_processing_run() {
                 i_inputBtn1PressFlag = 1;
                 LOG_DEBUG("Input Button 1 Pressed");
             }
-            if (getButtonPressFlag(1)) {
-				setButtonPressFlag(1, 0);
-				i_inputBtn2PressFlag = 1;
-				LOG_DEBUG("Input Button 1 Long Pressed");
-			}
+//            if (getButtonPressFlag(1)) {
+//				setButtonPressFlag(1, 0);
+//				i_inputBtn2PressFlag = 1;
+//				LOG_DEBUG("Input Button 1 Long Pressed");
+//			}
             if (getButtonLongPressFlag(0)) {
 				setButtonLongPressFlag(0, 0);
 				i_inputBtn1LongPressFlag = 1;
-				LOG_DEBUG("Input Button 2 Pressed");
+				LOG_DEBUG("Input Button 1 Long Pressed");
 			}
-			if (getButtonLongPressFlag(1)) {
-				setButtonLongPressFlag(1, 0);
-				i_inputBtn2LongPressFlag = 1;
-				LOG_DEBUG("Input Button 2 Long Pressed");
-			}
+//			if (getButtonLongPressFlag(1)) {
+//				setButtonLongPressFlag(1, 0);
+//				i_inputBtn2LongPressFlag = 1;
+//				LOG_DEBUG("Input Button 2 Long Pressed");
+//			}
             break;
 
         default:

@@ -1,3 +1,3 @@
 ../Core/Src/fsm_input_processing.c:32:6:input_processing_init	1
 ../Core/Src/fsm_input_processing.c:43:6:knx_read	7
-../Core/Src/fsm_input_processing.c:80:6:input_processing_run	14
+../Core/Src/fsm_input_processing.c:80:6:input_processing_run	12

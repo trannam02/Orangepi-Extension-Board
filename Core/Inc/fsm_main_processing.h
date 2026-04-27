@@ -35,6 +35,11 @@
 #define POLL_INTERVAL MS(500)
 #define POLL_TIMEOUT MS(100)
 
+// for long press processing
+#define LONGPRESS_PROCESSING_INIT 0
+#define LONGPRESS_PROCESSING_WAITING_FOR_RELEASE 1
+
+
 // for poll
 #define POLL_STATE_IDLE 0
 #define POLL_STATE_WAIT_RESPONSE 1

@@ -28,6 +28,10 @@ static uint32_t timeout3 = 0x00;
 #define MSG_TYPE_RESP_DATA      0x02 // 10
 #define MSG_TYPE_PAYLOAD_EMPTY  0x03 // 11
 
+// For detect coupler first time connect, disconnect
+static uint32_t firstTime_connect = 0x00000000;
+static uint32_t firstTime_disconnect = 0xFFFFFFFF;
+
 // For buzzer and led indication
 static uint8_t longPressCounter = 0;
 
@@ -47,7 +51,7 @@ void poll_processing_run() {
     switch(poll_state) {
         case POLL_STATE_IDLE:
         {
-            if(getTimer(2) == 1) { // getTimer(2) dùng làm timer đếm 10ms
+            if(getTimer(2) == 1) {
                 clearTimer(2);
 
                 uint8_t CMD_POLL[6] = {0x04, MSG_TYPE_CMD_POLL, coupler_arr[couplerX], 0x00};
@@ -70,7 +74,7 @@ void poll_processing_run() {
         }
         case POLL_STATE_WAIT_RESPONSE:
         {
-            if(getTimer(3) == 1) { // Hết 5ms mà chưa có trạm nào trả lời
+            if(getTimer(3) == 1) {
                 clearTimer(3);
                 LOG_WARN("POLL Timeout coupler %d", coupler_arr[couplerX]);
 
@@ -85,6 +89,14 @@ void poll_processing_run() {
 					timeout1 &= ~mask;
 					timeout2 &= ~mask;
 					timeout3 &= ~mask;
+
+					if (!(firstTime_disconnect & mask)) {
+						firstTime_disconnect |= mask;
+						firstTime_connect &= ~mask;
+						o_outputBuzzerType = BUZZER_CODE_FOR_DISCONNECTED_COUPLER;
+
+						LOG_WARN("Coupler %d ngat ket noi!", coupler_arr[couplerX]);
+					}
 
 					// send report to PI
 					uint8_t coupler_disconnect_package[5] = {0x04, 0x0F, 0x03, coupler_arr[couplerX]};
@@ -106,36 +118,36 @@ void poll_processing_run() {
 
 void longPress_processing_run(){
 	switch(longPress_state){
-	case LONGPRESS_PROCESSING_INIT:
-		if(longPressCounter == 2 && getButtonReleaseFlag()){
-			longPressCounter = 0;
-			// gui goi bat AP
-		}
-		if(longPressCounter == 3 && getButtonReleaseFlag()){
-			longPressCounter = 0;
-			if(system_state == SYSTEM_STATE_CONFIG){
-				system_state = SYSTEM_STATE_RUNNING;
-				// gui goi tin chuyen sang che do phu hop
-			}else{
-				system_state = SYSTEM_STATE_CONFIG;
-				// gui goi tin chuyen sang che do phu hop
-			};
-		}
-		if(longPressCounter >= 4){
-			o_outputBuzType = BUZZER_CODE_ALARM;
-			longPress_state = LONGPRESS_PROCESSING_WAITING_FOR_RELEASE;
-		}
-		break;
-	case LONGPRESS_PROCESSING_WAITING_FOR_RELEASE:
-		if(getButtonReleaseFlag()){
-			longPressCounter = 0;
-			o_outputBuzType = BUZZER_CODE_OFF;
-			longPress_state = LONGPRESS_PROCESSING_INIT;
-		}
-		break;
-	default:
-		break;
-	}
+		case LONGPRESS_PROCESSING_INIT:
+			if(longPressCounter == 2 && getButtonReleaseFlag(0)){
+				longPressCounter = 0;
+				// gui goi bat AP
+			}
+			if(longPressCounter == 3 && getButtonReleaseFlag(0)){
+				longPressCounter = 0;
+				if(system_state == SYSTEM_STATE_CONFIG){
+					system_state = SYSTEM_STATE_RUNNING;
+					// gui goi tin chuyen sang che do phu hop
+				}else{
+					system_state = SYSTEM_STATE_CONFIG;
+					// gui goi tin chuyen sang che do phu hop
+				};
+			}
+			if(longPressCounter >= 4){
+				o_outputBuzzerType = BUZZER_CODE_ALARM;
+				longPress_state = LONGPRESS_PROCESSING_WAITING_FOR_RELEASE;
+			}
+			break;
+		case LONGPRESS_PROCESSING_WAITING_FOR_RELEASE:
+			if(getButtonReleaseFlag(0)){
+				longPressCounter = 0;
+				o_outputBuzzerType = BUZZER_CODE_OFF;
+				longPress_state = LONGPRESS_PROCESSING_INIT;
+			}
+			break;
+		default:
+			break;
+	};
 };
 
 void main_processing_init() {
@@ -152,7 +164,7 @@ void main_processing_init() {
 
 void main_processing_run() {
 
-	state_processing_run();
+	longPress_processing_run();
 
 	if(system_state == SYSTEM_STATE_RUNNING && number_of_coupler > 0){ // other fsm
 		poll_processing_run();
@@ -367,10 +379,27 @@ void main_processing_run() {
 
                     if (is_my_response) {
                         clearTimer(3);
+
+                        // process for polling
+                        if(1){
+                        	uint32_t mask = (1U << coupler_arr[couplerX]);
+							timeout1 &= ~mask;
+							timeout2 &= ~mask;
+							timeout3 &= ~mask;
+
+							if (!(firstTime_connect & mask)) {
+
+								firstTime_connect |= mask;
+								firstTime_disconnect &= ~mask;
+								o_outputBuzzerType = BUZZER_CODE_FOR_CONNECTED_COUPLER;
+							}
+							poll_state = POLL_STATE_IDLE;
+                        }
+
                         couplerX = (couplerX + 1) % number_of_coupler;
                         clearTimer(2);
                         setTimer(2, POLL_INTERVAL);
-                        poll_state = POLL_STATE_IDLE;
+
 
                         // NẾU LÀ GÓI ACK RỖNG -> KHÔNG LÀM GÌ CẢ (CHỈ TIẾP TỤC VÒNG LẶP)
                         if(is_my_ack){
@@ -440,7 +469,8 @@ void main_processing_run() {
         case STATE_BTN_1_LONGPRESS_1S:
         	LOG_WARN("BUTTON PRESS 1s");
         	longPressCounter += 1;
-        	o_outputBuzzerType = BUZZER_CODE_ERROR;
+        	if(longPressCounter < 4) o_outputBuzzerType = BUZZER_CODE_FOR_BEEP_1S;
+
 			state = STATE_WAITTING;
 		break;
         default:
