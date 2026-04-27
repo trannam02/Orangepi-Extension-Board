@@ -46,9 +46,21 @@
 #define LED_CODE_BLINK_1HZ 3
 #define LED_CODE_BLINK_5HZ 4
 
+// for Buzzer
+#define BUZZER_OFF 0
+#define BUZZER_ON 1
+
+typedef enum {
+    BUZZER_CODE_OFF = 0,
+    BUZZER_CODE_SUCCESS, // Kêu "Tít - Tít" (âm thanh cao, nhanh)
+    BUZZER_CODE_ERROR,   // Kêu "Tò te" (âm trầm, kéo dài)
+    BUZZER_CODE_ALARM    // Kêu "Bíp ... Bíp ..." liên tục (Cảnh báo)
+} BuzzerCode_t;
+extern BuzzerCode_t o_outputBuzzerType;
 
 /////////////////////// EXTERN ///////////////
 extern uint8_t o_outputLedType;
+extern uint8_t o_outputBuzType;
 
 // for orange pi uplink
 /////////////////////// FUNCTION ///////////////

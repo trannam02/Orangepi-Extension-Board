@@ -2,6 +2,8 @@
 #include "fsm_input_processing.h"
 #include "queue_utils.h"
 
+extern TIM_HandleTypeDef htim1;
+
 // Khai báo extern vì các Queue này đã được cấp phát ở fsm_input_processing.c
 extern MessageQueue_t o_UPLINKQueue;
 extern MessageQueue_t o_RS485Queue;
@@ -9,7 +11,7 @@ extern MessageQueue_t o_KNXQueue;
 
 static uint8_t txData[MAX_BUFFER_LEN];
 uint8_t o_outputLedType = 0;
-
+BuzzerCode_t o_outputBuzzerType = 0;
 
 static uint8_t knx_tx_buffer[KNX_MAX_TX_LEN];
 static uint8_t knx_tx_length = 0;             // Tổng chiều dài gói tin
@@ -21,12 +23,14 @@ static uint8_t processed_rs485 = 0;
 static uint8_t processed_knx = 0;
 // Function prototype
 void outputLed();
+void outputBuzzer();
 void outputRS485();
 void outputKNX();
 void outputUPLINK();
 
 void output_processing_init() {
     HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
+    o_outputBuzzerType = BUZZER_CODE_OFF;
 }
 
 void output_processing_run() {
@@ -38,6 +42,7 @@ void output_processing_run() {
     outputRS485();
     outputUPLINK();
     outputLed();
+    outputBuzzer();
 }
 
 void outputUPLINK() {
@@ -117,28 +122,170 @@ void outputRS485() {
 
 }
 void outputLed() {
+    static uint8_t led_step = 0;
+    static uint8_t last_led_type = LED_CODE_OFF;
+
+    // ==============================================================
+    // [BẢO VỆ CHUYỂN TRẠNG THÁI]
+    // Nếu có lệnh đổi kiểu chớp đột ngột, phải reset lại tiến trình và Timer
+    // ==============================================================
+    if (o_outputLedType != last_led_type) {
+        led_step = 0;
+        clearTimer(1);
+        last_led_type = o_outputLedType;
+    }
+
     switch(o_outputLedType) {
         case LED_CODE_OFF:
-            HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
+            if (led_step == 0) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
+                led_step = 1;
+            }
             break;
+
         case LED_CODE_ON:
-            HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
+            if (led_step == 0) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
+                led_step = 1;
+            }
             break;
+
         case LED_CODE_BLINK_1HZ:
-            if (getTimer(1)) {
-                HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+            // Kịch bản 1Hz: Sáng 500ms -> Tắt 500ms (Tổng chu kỳ 1000ms = 1 giây)
+            if (led_step == 0) {
+                // Bắt buộc SÁNG ở nhịp đầu tiên
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
+                setTimer(1, MS(500));
+                led_step = 1;
+            }
+            else if (led_step == 1 && getTimer(1)) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
                 clearTimer(1);
                 setTimer(1, MS(500));
+                led_step = 2;
             }
-            break;
-        case LED_CODE_BLINK_5HZ:
-            if (getTimer(1)) {
-                HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+            else if (led_step == 2 && getTimer(1)) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
                 clearTimer(1);
-                setTimer(1, MS(200));
+                setTimer(1, MS(500));
+                led_step = 1;
             }
             break;
-        default:
+
+        case LED_CODE_BLINK_5HZ:
+            // Kịch bản 5Hz: Sáng 100ms -> Tắt 100ms (Tổng chu kỳ 200ms = 5 lần chớp/giây)
+            if (led_step == 0) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
+                setTimer(1, MS(100));
+                led_step = 1;
+            }
+            else if (led_step == 1 && getTimer(1)) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
+                clearTimer(1);
+                setTimer(1, MS(100));
+                led_step = 2;
+            }
+            else if (led_step == 2 && getTimer(1)) {
+                HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
+                clearTimer(1);
+                setTimer(1, MS(100));
+                led_step = 1;
+            }
             break;
+
+        default:
+            o_outputLedType = LED_CODE_OFF;
+            break;
+    }
+}
+
+void setBuzzerPWM(uint16_t freq);
+
+void outputBuzzer() {
+    static uint8_t buzzer_step = 0;
+    static BuzzerCode_t last_buzzer_type = BUZZER_CODE_OFF;
+
+    // [Bảo vệ]: Nếu có lệnh đổi kiểu kêu đột ngột, phải reset lại tiến trình
+    if (o_outputBuzzerType != last_buzzer_type) {
+        buzzer_step = 0;
+        setBuzzerPWM(0); // Tắt còi ngay lập tức
+        clearTimer(5);
+        last_buzzer_type = o_outputBuzzerType;
+    }
+
+    switch(o_outputBuzzerType) {
+        case BUZZER_CODE_OFF:
+            break;
+
+        case BUZZER_CODE_SUCCESS:
+            // Kịch bản: Kêu 2kHz (100ms) -> Nghỉ (100ms) -> Kêu 2kHz (100ms) -> Tự tắt
+            if (buzzer_step == 0) {
+                setBuzzerPWM(2000); // Tần số 2000Hz (Âm cao)
+                setTimer(5, MS(100));
+                buzzer_step = 1;
+            }
+            else if (buzzer_step == 1 && getTimer(5)) {
+                setBuzzerPWM(0);
+                clearTimer(5);
+                setTimer(5, MS(100));
+                buzzer_step = 2;
+            }
+            else if (buzzer_step == 2 && getTimer(5)) {
+                setBuzzerPWM(2000);
+                clearTimer(5);
+                setTimer(5, MS(100));
+                buzzer_step = 3;
+            }
+            else if (buzzer_step == 3 && getTimer(5)) {
+                setBuzzerPWM(0);
+                o_outputBuzzerType = BUZZER_CODE_OFF; // Kêu xong thì tự trả về trạng thái OFF
+            }
+            break;
+
+        case BUZZER_CODE_ERROR:
+            // Kịch bản: Kêu 1 tiếng cực trầm và dài (500ms)
+            if (buzzer_step == 0) {
+                setBuzzerPWM(250); // Tần số 250Hz (Âm trầm báo lỗi)
+                setTimer(5, MS(500));
+                buzzer_step = 1;
+            }
+            else if (buzzer_step == 1 && getTimer(5)) {
+                setBuzzerPWM(0);
+                o_outputBuzzerType = BUZZER_CODE_OFF; // Kêu xong tự tắt
+            }
+            break;
+
+        case BUZZER_CODE_ALARM:
+            // Kịch bản: Kêu tít tít lặp đi lặp lại vô hạn (Giống chớp LED)
+            if (buzzer_step == 0) {
+                setBuzzerPWM(1000); // 1000Hz
+                setTimer(5, MS(200));
+                buzzer_step = 1;
+            }
+            else if (buzzer_step == 1 && getTimer(5)) {
+                setBuzzerPWM(0);
+                clearTimer(5);
+                setTimer(5, MS(200));
+                buzzer_step = 0; // Quay lại bước 0 để vòng lặp mãi mãi
+            }
+            break;
+
+        default:
+            o_outputBuzzerType = BUZZER_CODE_OFF;
+            break;
+    }
+}
+void setBuzzerPWM(uint16_t freq) {
+    if (freq == 0) {
+        // Tần số 0 -> Tắt còi
+        HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+    } else {
+        // Tính toán thanh ghi ARR để ra đúng tần số
+        uint32_t arr_value = 1000000 / freq;
+
+        __HAL_TIM_SET_AUTORELOAD(&htim1, arr_value);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, arr_value / 2); // Duty 50%
+
+        HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
     }
 }

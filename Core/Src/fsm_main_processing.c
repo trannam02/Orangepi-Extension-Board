@@ -12,7 +12,9 @@ extern MessageQueue_t o_KNXQueue;
 extern MessageQueue_t o_UPLINKQueue;
 
 static uint8_t state = STATE_INIT;
+static uint8_t longPress_state = LONGPRESS_PROCESSING_INIT;
 
+// For couplers info and timeout checking
 static uint8_t coupler_arr[32] = {};
 static uint8_t number_of_coupler = 0;
 static uint8_t couplerX = 0; // range 0 -> 31
@@ -20,12 +22,14 @@ static uint32_t timeout1 = 0x00;
 static uint32_t timeout2 = 0x00;
 static uint32_t timeout3 = 0x00;
 
-
+// For couplers comm
 #define MSG_TYPE_CMD_POLL       0x00 // 00
 #define MSG_TYPE_CMD_CONTROL    0x01 // 01
 #define MSG_TYPE_RESP_DATA      0x02 // 10
 #define MSG_TYPE_PAYLOAD_EMPTY  0x03 // 11
 
+// For buzzer and led indication
+static uint8_t longPressCounter = 0;
 
 uint8_t setListCoupler(uint8_t * list, uint8_t len){
 	if(len < 32 && len >= 0) {
@@ -99,6 +103,41 @@ void poll_processing_run() {
     }
 }
 
+
+void longPress_processing_run(){
+	switch(longPress_state){
+	case LONGPRESS_PROCESSING_INIT:
+		if(longPressCounter == 2 && getButtonReleaseFlag()){
+			longPressCounter = 0;
+			// gui goi bat AP
+		}
+		if(longPressCounter == 3 && getButtonReleaseFlag()){
+			longPressCounter = 0;
+			if(system_state == SYSTEM_STATE_CONFIG){
+				system_state = SYSTEM_STATE_RUNNING;
+				// gui goi tin chuyen sang che do phu hop
+			}else{
+				system_state = SYSTEM_STATE_CONFIG;
+				// gui goi tin chuyen sang che do phu hop
+			};
+		}
+		if(longPressCounter >= 4){
+			o_outputBuzType = BUZZER_CODE_ALARM;
+			longPress_state = LONGPRESS_PROCESSING_WAITING_FOR_RELEASE;
+		}
+		break;
+	case LONGPRESS_PROCESSING_WAITING_FOR_RELEASE:
+		if(getButtonReleaseFlag()){
+			longPressCounter = 0;
+			o_outputBuzType = BUZZER_CODE_OFF;
+			longPress_state = LONGPRESS_PROCESSING_INIT;
+		}
+		break;
+	default:
+		break;
+	}
+};
+
 void main_processing_init() {
     state = STATE_INIT;
     clearTimer(2);
@@ -112,6 +151,8 @@ void main_processing_init() {
 }
 
 void main_processing_run() {
+
+	state_processing_run();
 
 	if(system_state == SYSTEM_STATE_RUNNING && number_of_coupler > 0){ // other fsm
 		poll_processing_run();
@@ -155,21 +196,21 @@ void main_processing_run() {
 
             if (i_inputBtn1LongPressFlag) {
             	i_inputBtn1LongPressFlag = 0;
-                state = STATE_BTN_1_LONGPRESS_3S;
+                state = STATE_BTN_1_LONGPRESS_1S;
                 break;
             }
 
-           	if (i_inputBtn2PressFlag) {
-            	i_inputBtn2PressFlag = 0;
-//                state = STATE_BTN_PRESS_5S;
-            	 break;
-            }
-
-           	if (i_inputBtn2LongPressFlag) {
-            	i_inputBtn2LongPressFlag = 0;
-//                state = STATE_BTN_PRESS_5S;
-            	 break;
-            }
+//           	if (i_inputBtn2PressFlag) {
+//            	i_inputBtn2PressFlag = 0;
+////                state = STATE_BTN_PRESS_5S;
+//            	 break;
+//            }
+//
+//           	if (i_inputBtn2LongPressFlag) {
+//            	i_inputBtn2LongPressFlag = 0;
+////                state = STATE_BTN_PRESS_5S;
+//            	 break;
+//            }
             break;
 
         case STATE_PROCESS_DOWNLINK:
@@ -192,6 +233,8 @@ void main_processing_run() {
 					LOG_ERROR("ORP Downlink CRC FAILED! Calc: %02X | Recv: %02X. Drop package!", calculated_crc, received_crc);
 					continue;
 				}
+
+				// xu li goi tin de indicator led
 
 
 				if (system_state == SYSTEM_STATE_CONFIG){
@@ -391,29 +434,13 @@ void main_processing_run() {
             break;
 
         case STATE_BTN_1_PRESS:
-//            if (o_outputLedType == LED_CODE_BLINK_5HZ) {
-//                o_outputLedType = LED_CODE_OFF;
-//            } else {
-//                o_outputLedType = LED_CODE_BLINK_5HZ;
-//                clearTimer(1);
-//                setTimer(1, MS(200));
-//            }
+//        	o_outputBuzzerType = BUZZER_CODE_ERROR;
             state = STATE_WAITTING;
             break;
-        case STATE_BTN_1_LONGPRESS_3S:
-        	LOG_WARN("BUTTON PRESS 3s");
-			if (o_outputLedType == LED_CODE_BLINK_5HZ) {
-				o_outputLedType = LED_CODE_OFF;
-				// thoat khoi che do config
-				system_state = SYSTEM_STATE_RUNNING;
-			} else {
-				o_outputLedType = LED_CODE_BLINK_5HZ;
-				clearTimer(1);
-				setTimer(1, MS(200));
-				// beef 3 tieng
-				// chuyen sang che do config
-				system_state = SYSTEM_STATE_CONFIG;
-			}
+        case STATE_BTN_1_LONGPRESS_1S:
+        	LOG_WARN("BUTTON PRESS 1s");
+        	longPressCounter += 1;
+        	o_outputBuzzerType = BUZZER_CODE_ERROR;
 			state = STATE_WAITTING;
 		break;
         default:

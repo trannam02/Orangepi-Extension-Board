@@ -1,7 +1,9 @@
-../Core/Src/fsm_output_processing.c:28:6:output_processing_init	8	static
-../Core/Src/fsm_output_processing.c:32:6:output_processing_run	8	static
-../Core/Src/fsm_output_processing.c:43:6:outputUPLINK	16	static
-../Core/Src/fsm_output_processing.c:59:6:knx_fsm_send_next_chunk	16	static
-../Core/Src/fsm_output_processing.c:81:6:outputKNX	16	static
-../Core/Src/fsm_output_processing.c:101:6:outputRS485	16	static
-../Core/Src/fsm_output_processing.c:119:6:outputLed	8	static
+../Core/Src/fsm_output_processing.c:31:6:output_processing_init	8	static
+../Core/Src/fsm_output_processing.c:36:6:output_processing_run	8	static
+../Core/Src/fsm_output_processing.c:48:6:outputUPLINK	16	static
+../Core/Src/fsm_output_processing.c:64:6:knx_fsm_send_next_chunk	16	static
+../Core/Src/fsm_output_processing.c:86:6:outputKNX	16	static
+../Core/Src/fsm_output_processing.c:106:6:outputRS485	16	static
+../Core/Src/fsm_output_processing.c:124:6:outputLed	8	static
+../Core/Src/fsm_output_processing.c:153:6:outputBuzzer	8	static
+../Core/Src/fsm_output_processing.c:227:6:setBuzzerPWM	24	static

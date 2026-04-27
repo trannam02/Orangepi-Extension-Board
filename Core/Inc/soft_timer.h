@@ -27,6 +27,7 @@ void timerRun();
  * Timer 2: Polling Package
  * Timer 3: Send KNX package
  * Timer 4: Receive KNX package
+ * Timer 5: Buzzer timing
  * */
 
 #endif

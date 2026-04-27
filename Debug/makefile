@@ -60,8 +60,8 @@ all: main-build
 main-build: extension_board.elf secondary-outputs
 
 # Tool invocations
-extension_board.elf extension_board.map: $(OBJS) $(USER_OBJS) C:\Users\Nam\STM32Cube\MyWorkspace\extension_board\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "extension_board.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\Nam\STM32Cube\MyWorkspace\extension_board\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="extension_board.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+extension_board.elf extension_board.map: $(OBJS) $(USER_OBJS) D:\learn\DOANKTMT\Document\Orangepi-Extension-Board\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "extension_board.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"D:\learn\DOANKTMT\Document\Orangepi-Extension-Board\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="extension_board.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

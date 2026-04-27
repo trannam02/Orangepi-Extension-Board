@@ -22,20 +22,24 @@ void button_run(){
 	}
 };
 
-int keyReg0s[NO_BUTTON] = {BUTTON_STATE_PRESS,BUTTON_STATE_PRESS };
-int keyReg1s[NO_BUTTON] = {BUTTON_STATE_PRESS,BUTTON_STATE_PRESS };
-int keyReg2s[NO_BUTTON] = {BUTTON_STATE_PRESS,BUTTON_STATE_PRESS };
-int keyRegStables[NO_BUTTON] = {BUTTON_STATE_PRESS,BUTTON_STATE_PRESS} ;
+int keyReg0s[NO_BUTTON] = {BUTTON_STATE_PRESS};
+int keyReg1s[NO_BUTTON] = {BUTTON_STATE_PRESS};
+int keyReg2s[NO_BUTTON] = {BUTTON_STATE_PRESS};
+int keyRegStables[NO_BUTTON] = {BUTTON_STATE_PRESS};
 
-int longPressDurations[NO_BUTTON] = {LONG_PRESS_DURATION,LONG_PRESS_DURATION};
+int longPressDurations[NO_BUTTON] = {LONG_PRESS_DURATION};
 
-int states[NO_BUTTON] = {RELEASED,RELEASED};
-int pressedFlags[NO_BUTTON] = {0,0};
-int longPressedFlags[NO_BUTTON] = {0,0};
+int states[NO_BUTTON] = {RELEASED};
+
+int pressedFlags[NO_BUTTON] = {0};
+int releaseFlags[NO_BUTTON] = {0};
+int longPressedFlags[NO_BUTTON] = {0};
 
 
 int getButtonPressFlag(int index){return pressedFlags[index];};
 void setButtonPressFlag(int index, int value){pressedFlags[index] = value;};
+
+int getButtonReleaseFlag(int index){return releaseFlags[index];};
 
 int getButtonLongPressFlag(int index){return longPressedFlags[index];};
 void setButtonLongPressFlag(int index, int value){longPressedFlags[index] = value;};
@@ -45,16 +49,18 @@ void getKeyInput() {
 	keyReg1s[0] = keyReg0s[0];
 	keyReg0s[0] = HAL_GPIO_ReadPin(BTN_1_GPIO_Port, BTN_1_Pin);
 
-	keyReg2s[1] = keyReg1s[1];
-	keyReg1s[1] = keyReg0s[1];
-	keyReg0s[1] = HAL_GPIO_ReadPin(BTN_2_GPIO_Port, BTN_2_Pin);
+//	keyReg2s[1] = keyReg1s[1];
+//	keyReg1s[1] = keyReg0s[1];
+//	keyReg0s[1] = HAL_GPIO_ReadPin(BTN_2_GPIO_Port, BTN_2_Pin);
 
 	for (int i = 0; i < NO_BUTTON; i++) {
 		if ((keyReg0s[i] == keyReg1s[i]) && (keyReg1s[i] == keyReg2s[i])) {
 			keyRegStables[i] = keyReg0s[i];
 			switch (states[i]) {
 			case RELEASED:
+				releaseFlags[i] = 1;
 				if (keyRegStables[i] == BUTTON_STATE_PRESS) {
+					releaseFlags[i] = 0;
 					states[i] = PRESSED;
 					longPressDurations[i] = LONG_PRESS_DURATION;
 				}
