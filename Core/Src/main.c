@@ -142,6 +142,9 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  MX_TIM1_Init();
+
+  HAL_Delay(9000);
 
   /* USER CODE END Init */
 
@@ -162,6 +165,8 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
+
 
   /////////////////////////// for timer
   HAL_TIM_Base_Start_IT (&htim3 );

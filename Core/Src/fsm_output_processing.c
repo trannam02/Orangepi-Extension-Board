@@ -172,23 +172,23 @@ void outputLed() {
             }
             break;
 
-        case LED_CODE_BLINK_5HZ:
+        case LED_CODE_BLINK_4HZ:
             // Kịch bản 5Hz: Sáng 100ms -> Tắt 100ms (Tổng chu kỳ 200ms = 5 lần chớp/giây)
             if (led_step == 0) {
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
-                setTimer(1, MS(100));
+                setTimer(1, MS(250));
                 led_step = 1;
             }
             else if (led_step == 1 && getTimer(1)) {
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
                 clearTimer(1);
-                setTimer(1, MS(100));
+                setTimer(1, MS(250));
                 led_step = 2;
             }
             else if (led_step == 2 && getTimer(1)) {
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
                 clearTimer(1);
-                setTimer(1, MS(100));
+                setTimer(1, MS(250));
                 led_step = 1;
             }
             break;
@@ -199,7 +199,7 @@ void outputLed() {
     }
 }
 
-void setBuzzerPWM(uint16_t freq);
+
 
 void outputBuzzer() {
     static uint8_t buzzer_step = 0;

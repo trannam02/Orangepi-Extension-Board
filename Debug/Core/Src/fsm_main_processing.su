@@ -1,5 +1,5 @@
-../Core/Src/fsm_main_processing.c:34:9:setListCoupler	16	static
-../Core/Src/fsm_main_processing.c:46:6:poll_processing_run	32	static
-../Core/Src/fsm_main_processing.c:107:6:longPress_processing_run	8	static
-../Core/Src/fsm_main_processing.c:141:6:main_processing_init	8	static
-../Core/Src/fsm_main_processing.c:153:6:main_processing_run	312	static
+../Core/Src/fsm_main_processing.c:38:9:setListCoupler	16	static
+../Core/Src/fsm_main_processing.c:50:6:poll_processing_run	32	static
+../Core/Src/fsm_main_processing.c:119:6:longPress_processing_run	32	static
+../Core/Src/fsm_main_processing.c:162:6:main_processing_init	8	static
+../Core/Src/fsm_main_processing.c:174:6:main_processing_run	312	static

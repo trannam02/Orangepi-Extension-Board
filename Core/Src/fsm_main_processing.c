@@ -122,15 +122,24 @@ void longPress_processing_run(){
 			if(longPressCounter == 2 && getButtonReleaseFlag(0)){
 				longPressCounter = 0;
 				// gui goi bat AP
+				uint8_t turnOnAP[6] = {5, 0x0E, 0x01, 0xAB, 0xBA};
+				turnOnAP[5] = crc8(&turnOnAP[1], 4);
+				Queue_Push(&o_UPLINKQueue, turnOnAP, turnOnAP[0] + 1);
 			}
 			if(longPressCounter == 3 && getButtonReleaseFlag(0)){
 				longPressCounter = 0;
 				if(system_state == SYSTEM_STATE_CONFIG){
 					system_state = SYSTEM_STATE_RUNNING;
 					// gui goi tin chuyen sang che do phu hop
+					uint8_t switchToRunning[6] = {5, 0x0E, 0x01, 0xBE, 0xEF};
+					switchToRunning[5] = crc8(&switchToRunning[1], 4);
+					Queue_Push(&o_UPLINKQueue, switchToRunning, switchToRunning[0] + 1);
 				}else{
 					system_state = SYSTEM_STATE_CONFIG;
 					// gui goi tin chuyen sang che do phu hop
+					uint8_t switchToConfig[6] = {5, 0x0E, 0x01, 0xCA, 0xFE};
+					switchToConfig[5] = crc8(&switchToConfig[1], 4);
+					Queue_Push(&o_UPLINKQueue, switchToConfig, switchToConfig[0] + 1);
 				};
 			}
 			if(longPressCounter >= 4){
@@ -156,7 +165,7 @@ void main_processing_init() {
     setTimer(2, POLL_INTERVAL);
 
 
-    o_outputLedType = LED_CODE_BLINK_5HZ;
+    o_outputLedType = LED_CODE_OFF;
 	clearTimer(1);
 	setTimer(1, MS(200));
 	system_state = SYSTEM_STATE_CONFIG;
@@ -247,7 +256,34 @@ void main_processing_run() {
 				}
 
 				// xu li goi tin de indicator led
+				if(header == HEADER_COMMAND){
+					if(	rxData[2] == 0x05 &&
+						rxData[3] == 0x01){
+						switch(rxData[4]){
+						case 0x01:
+							o_outputLedType = LED_CODE_BLINK_4HZ;
+							break;
+						case 0x02:
+							o_outputLedType = LED_CODE_BLINK_1HZ;
+							break;
+						case 0x03:
+							o_outputLedType = LED_CODE_ON;
+							break;
+						case 0x04:
+							o_outputLedType = LED_CODE_OFF;
+							break;
+						default:
+							break;
+						}
+					};
 
+					if( rxData[2] == 0x01 &&
+						rxData[3] == 0xFE &&
+						rxData[4] == 0xCA){
+						system_state = SYSTEM_STATE_CONFIG;
+						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1);
+					};
+				}
 
 				if (system_state == SYSTEM_STATE_CONFIG){
 
@@ -304,20 +340,6 @@ void main_processing_run() {
 
 					Queue_Push(&o_KNXQueue, txData, encoded_len + 1); // +1 byte length
 					LOG_WARN("Downlink routed to (KNX)");
-                } else if(header == HEADER_COMMAND){
-                	if( rxData[1] == 0x0E &&
-                		rxData[2] == 0x01 &&
-						rxData[3] == 0xFE &&
-						rxData[4] == 0xCA){
-                		// chuyen sang che do config
-                		o_outputLedType = LED_CODE_BLINK_5HZ;
-						clearTimer(1);
-						setTimer(1, MS(200));
-						// beef 3 tieng
-						// chuyen sang che do config
-						system_state = SYSTEM_STATE_CONFIG;
-						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1);
-                	};
                 }
             }
             state = STATE_WAITTING;

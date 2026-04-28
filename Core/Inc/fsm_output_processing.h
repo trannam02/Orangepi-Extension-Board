@@ -44,7 +44,7 @@
 #define LED_CODE_OFF 1
 #define LED_CODE_ON 2
 #define LED_CODE_BLINK_1HZ 3
-#define LED_CODE_BLINK_5HZ 4
+#define LED_CODE_BLINK_4HZ 4
 
 // for Buzzer
 #define BUZZER_OFF 0
@@ -68,6 +68,8 @@ extern uint8_t o_outputLedType;
 /////////////////////// FUNCTION ///////////////
 void output_processing_init();
 void output_processing_run();
+
+void setBuzzerPWM(uint16_t freq);
 
 
 #endif /* INC_FSM_OUTPUT_PROCESSING_H_ */
