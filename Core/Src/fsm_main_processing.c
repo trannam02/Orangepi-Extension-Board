@@ -77,6 +77,7 @@ void poll_processing_run() {
             if(getTimer(3) == 1) {
                 clearTimer(3);
                 LOG_WARN("POLL Timeout coupler %d", coupler_arr[couplerX]);
+                LOG_SPEC_INFO(LOG_CODE_COUPLER_X_TIMEOUT, coupler_arr[couplerX]);
 
                 // timeout
 
@@ -95,6 +96,7 @@ void poll_processing_run() {
 						firstTime_connect &= ~mask;
 						o_outputBuzzerType = BUZZER_CODE_FOR_DISCONNECTED_COUPLER;
 
+						LOG_SPEC_INFO(LOG_CODE_COUPLER_X_DISCONNECT, coupler_arr[couplerX]);
 						LOG_WARN("Coupler %d ngat ket noi!", coupler_arr[couplerX]);
 					}
 
@@ -129,12 +131,14 @@ void longPress_processing_run(){
 			if(longPressCounter == 3 && getButtonReleaseFlag(0)){
 				longPressCounter = 0;
 				if(system_state == SYSTEM_STATE_CONFIG){
+					LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_RUNNING, 0);
 					system_state = SYSTEM_STATE_RUNNING;
 					// gui goi tin chuyen sang che do phu hop
 					uint8_t switchToRunning[6] = {5, 0x0E, 0x01, 0xBE, 0xEF};
 					switchToRunning[5] = crc8(&switchToRunning[1], 4);
 					Queue_Push(&o_UPLINKQueue, switchToRunning, switchToRunning[0] + 1);
 				}else{
+					LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_CONFIG, 0);
 					system_state = SYSTEM_STATE_CONFIG;
 					// gui goi tin chuyen sang che do phu hop
 					uint8_t switchToConfig[6] = {5, 0x0E, 0x01, 0xCA, 0xFE};
@@ -221,17 +225,6 @@ void main_processing_run() {
                 break;
             }
 
-//           	if (i_inputBtn2PressFlag) {
-//            	i_inputBtn2PressFlag = 0;
-////                state = STATE_BTN_PRESS_5S;
-//            	 break;
-//            }
-//
-//           	if (i_inputBtn2LongPressFlag) {
-//            	i_inputBtn2LongPressFlag = 0;
-////                state = STATE_BTN_PRESS_5S;
-//            	 break;
-//            }
             break;
 
         case STATE_PROCESS_DOWNLINK:
@@ -241,6 +234,7 @@ void main_processing_run() {
 
             	if (rxData[0] < 2) {
 					LOG_WARN("Drop garbage packet with len=0");
+					LOG_SPEC_DEBUG(LOG_CODE_DOWNLINK_DROP_PACKAGE_WITH_LENGTH, rxData[0]);
 					continue;
 				}
                 uint8_t total_len = rxData[0];
@@ -252,6 +246,7 @@ void main_processing_run() {
 
 				if (calculated_crc != received_crc) {
 					LOG_ERROR("ORP Downlink CRC FAILED! Calc: %02X | Recv: %02X. Drop package!", calculated_crc, received_crc);
+					LOG_SPEC_DEBUG(LOG_CODE_DOWNLINK_CRC_FAIL_RECV_CALC, (uint32_t)((0x00000000 | received_crc) << 16) | (uint32_t)((0x00000000 | calculated_crc) << 0));
 					continue;
 				}
 
@@ -281,13 +276,12 @@ void main_processing_run() {
 						rxData[3] == 0xFE &&
 						rxData[4] == 0xCA){
 						system_state = SYSTEM_STATE_CONFIG;
+						LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_CONFIG, HAL_GetTick());
 						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1);
 					};
 				}
 
 				if (system_state == SYSTEM_STATE_CONFIG){
-
-					// kiem tra xem phai goi tin chuyen ve che do running khong
 					if(rxData[0] == 5 &&
 					   rxData[1] == 0x0E &&
 					   rxData[2] == 0x01 &&
@@ -295,6 +289,7 @@ void main_processing_run() {
 					   rxData[4] == 0xBE){
 						o_outputLedType = LED_CODE_OFF;
 						system_state = SYSTEM_STATE_RUNNING;
+						LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_RUNNING, HAL_GetTick());
 						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1); // phan hoi goi tuong tu
 						continue;
 					}
@@ -313,8 +308,6 @@ void main_processing_run() {
 					continue;
 				}
 
-
-
                 if (header == HEADER_RS485) {
                 	txData[0] = payload_size + 1 + 1; // Length mới = payload + 1 byte CRC + 1 byte MSG_TYPE_CMD_CONTROL
 					txData[1] = MSG_TYPE_CMD_CONTROL;
@@ -328,7 +321,7 @@ void main_processing_run() {
 						LOG_WARN("QUEUE FULL");
 					}
 					LOG_WARN("Downlink routed to RS485");
-
+					LOG_SPEC_INFO(LOG_CODE_DOWNLINK_ROUTE_TO_RS485, HAL_GetTick());
                 } else if (header == HEADER_KNX) {
                 	uint8_t* raw_knx_data = &rxData[2];
 
@@ -340,6 +333,7 @@ void main_processing_run() {
 
 					Queue_Push(&o_KNXQueue, txData, encoded_len + 1); // +1 byte length
 					LOG_WARN("Downlink routed to (KNX)");
+					LOG_SPEC_INFO(LOG_CODE_DOWNLINK_ROUTE_TO_KNX, HAL_GetTick());
                 }
             }
             state = STATE_WAITTING;
@@ -352,6 +346,7 @@ void main_processing_run() {
 
                 if (rxData[0] < 1) {
                     LOG_WARN("Drop garbage packet with len=0");
+                    LOG_SPEC_DEBUG(LOG_CODE_RS485_DROP_PACKAGE_WITH_LENGTH, rxData[0]);
                     continue;
                 }
 
@@ -361,6 +356,7 @@ void main_processing_run() {
 
                 if (calculated_crc != received_crc) {
                     LOG_ERROR("RS485 CRC FAILED! Calc: %02X | Recv: %02X. Drop package!", calculated_crc, received_crc);
+                    LOG_SPEC_DEBUG(LOG_CODE_RS485_CRC_FAIL_RECV_CALC, (uint32_t)((0x00000000 | received_crc) << 16) | (uint32_t)((0x00000000 | calculated_crc) << 0));
                     continue;
                 }
 
@@ -381,6 +377,7 @@ void main_processing_run() {
                         is_my_response = true;
                         is_my_ack = true;
                         LOG_WARN("Nhan ACK tu coupler %d", coupler_arr[couplerX]);
+                        LOG_SPEC_DEBUG(LOG_CODE_RS485_RECEIVE_ACK_OF_COUPLER_X, coupler_arr[couplerX]);
                     }
                     // Kịch bản 2: Gói data trả về chứa thông tin couplerX
                     // BẮT BUỘC: Đảm bảo độ dài gói tin >= 4 trước khi soi byte index [3]
@@ -390,12 +387,13 @@ void main_processing_run() {
                     							 ) {
                                             is_my_response = true;
                         LOG_WARN("Nhan DATA phan hoi tu coupler %d", coupler_arr[couplerX]);
+                        LOG_SPEC_DEBUG(LOG_CODE_RS485_RECEIVE_RESPONSE_OF_COUPLER_X, coupler_arr[couplerX]);
                     }else{
                     	LOG_WARN("Nhan pkg nhung k phai data va ack: current couplerid %02X\n", coupler_arr[couplerX]);
+                    	LOG_SPEC_DEBUG(LOG_CODE_CHUA_BIET_DEFINE_GI, HAL_GetTick());
                     	for(int i = 1; i < rxData[0]+1; i++){
                     		LOG_WARN("%02X", rxData[i]);
                     	}
-//                    	LOG_WARN("\n");
 
                     }
 
@@ -423,7 +421,7 @@ void main_processing_run() {
                         setTimer(2, POLL_INTERVAL);
 
 
-                        // NẾU LÀ GÓI ACK RỖNG -> KHÔNG LÀM GÌ CẢ (CHỈ TIẾP TỤC VÒNG LẶP)
+                        // NẾU LÀ GÓI ACK -> KHÔNG LÀM GÌ CẢ (CHỈ TIẾP TỤC VÒNG LẶP)
                         if(is_my_ack){
                             continue;
                         }
@@ -438,6 +436,7 @@ void main_processing_run() {
                     // Nếu không phải phản hồi mình cần -> Lệnh continue ngầm (hết vòng lặp)
                 }else{
                 	LOG_WARN("IDLING, not waiting for response", coupler_arr[couplerX]);
+                	LOG_SPEC_DEBUG(LOG_CODE_CHUA_BIET_DEFINE_GI, HAL_GetTick());
 					for(int i = 1; i < rxData[0]+1; i++){
 						LOG_WARN("%02X", rxData[i]);
 					}
@@ -456,6 +455,7 @@ void main_processing_run() {
 
                 if(total_len < 5){
                 	LOG_WARN("Drop KNX gargbage len=%d", total_len);
+                	LOG_SPEC_DEBUG(LOG_CODE_KNX_DROP_PACKAGE_WITH_LENGTH, total_len);
                 	continue;
                 }
 
@@ -468,6 +468,7 @@ void main_processing_run() {
 						LOG_WARN("KNX ACK of sent package: isACK=%d", rxData[total_len] >> 7);
 					}else{
 						LOG_ERROR("KNX Frame Checksum FAILED! Calc: %02X | Recv: %02X", calculated_checksum, received_checksum);
+						LOG_SPEC_DEBUG(LOG_CODE_KNX_CHECKSUM_FAIL_RECV_CALC, (uint32_t)((0x00000000 | received_checksum) << 16) | (uint32_t)((0x00000000 | calculated_checksum) << 0));
 						continue;
 					}
 
@@ -490,6 +491,7 @@ void main_processing_run() {
             break;
         case STATE_BTN_1_LONGPRESS_1S:
         	LOG_WARN("BUTTON PRESS 1s");
+        	LOG_SPEC_DEBUG(LOG_CODE_BUTTON_CONTINUE_PRESS_1S, HAL_GetTick());
         	longPressCounter += 1;
         	if(longPressCounter < 4) o_outputBuzzerType = BUZZER_CODE_FOR_BEEP_1S;
 

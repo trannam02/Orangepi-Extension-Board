@@ -17,13 +17,46 @@
 #define LOG_BUFFER_SIZE 256
 
 LogLevel_t system_log_level = LOG_LEVEL_INFO; // Mặc định là INFO
-
 void Log_Init(LogLevel_t level) {
     system_log_level = level;
 }
-
 void Log_SetLevel(LogLevel_t level) {
     system_log_level = level;
+}
+
+
+LogLevelSpecial_t system_log_level_special = LOG_SPEC_LEVEL_INFO; // Mặc định là INFO
+
+void Log_Spec_Init(LogLevel_t level) {
+	system_log_level_special = level;
+}
+void Log_Spec_SetLevel(LogLevel_t level) {
+	system_log_level_special = level;
+}
+
+static uint8_t buffer_spec[11] = {0,0x0E,0x04,0,0,0,0,0,0,0,0};
+
+void Log_Special(LogLevelSpecial_t level, LogCode_t code, uint32_t number){
+	if (level > system_log_level_special) {
+		return;
+	}
+	// 0E 04 LEVEL (1 byte) CODE(2 byte) NUM (uint32_t) CRC8
+	buffer_spec[0] = 10;
+//	buffer_spec[1] = 0x0E;
+//	buffer_spec[2] = 0x04;
+	buffer_spec[3] = level;
+
+	buffer_spec[4] = (code >> 8);
+	buffer_spec[5] = (code & 0x00FF);
+
+	buffer_spec[6] = (uint8_t)((number & 0xFF000000) >> 24);
+	buffer_spec[7] = (uint8_t)((number & 0x00FF0000) >> 16);
+	buffer_spec[8] = (uint8_t)((number & 0x0000FF00) >> 8);
+	buffer_spec[9] = (uint8_t)((number & 0x000000FF));
+
+	buffer_spec[10] = crc8(&buffer_spec[1], 10);
+
+ 	Queue_Push(&o_UPLINKQueue, buffer_spec, buffer_spec[0] + 1);
 }
 
 void Log_Write(LogLevel_t level, const char *format, ...) {

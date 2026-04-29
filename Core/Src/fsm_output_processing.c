@@ -151,9 +151,7 @@ void outputLed() {
             break;
 
         case LED_CODE_BLINK_1HZ:
-            // Kịch bản 1Hz: Sáng 500ms -> Tắt 500ms (Tổng chu kỳ 1000ms = 1 giây)
             if (led_step == 0) {
-                // Bắt buộc SÁNG ở nhịp đầu tiên
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
                 setTimer(1, MS(500));
                 led_step = 1;
@@ -172,23 +170,22 @@ void outputLed() {
             }
             break;
 
-        case LED_CODE_BLINK_4HZ:
-            // Kịch bản 5Hz: Sáng 100ms -> Tắt 100ms (Tổng chu kỳ 200ms = 5 lần chớp/giây)
+        case LED_CODE_BLINK_4HZ: // 0.25Hz moi dung haha
             if (led_step == 0) {
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
-                setTimer(1, MS(250));
+                setTimer(1, MS(2000));
                 led_step = 1;
             }
             else if (led_step == 1 && getTimer(1)) {
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, SET);
                 clearTimer(1);
-                setTimer(1, MS(250));
+                setTimer(1, MS(2000));
                 led_step = 2;
             }
             else if (led_step == 2 && getTimer(1)) {
                 HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, RESET);
                 clearTimer(1);
-                setTimer(1, MS(250));
+                setTimer(1, MS(2000));
                 led_step = 1;
             }
             break;

@@ -177,6 +177,8 @@ int main(void)
   HAL_GPIO_WritePin(KNX_RESETb_GPIO_Port, KNX_RESETb_Pin, SET);
 
   Log_Init(LOG_LEVEL_NONE);
+  Log_Spec_Init(LOG_SPEC_LEVEL_INFO);
+
   uartManualInit();
   button_init();
   input_processing_init();
