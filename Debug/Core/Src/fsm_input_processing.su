@@ -1,3 +1,0 @@
-../Core/Src/fsm_input_processing.c:32:6:input_processing_init	8	static
-../Core/Src/fsm_input_processing.c:43:6:knx_read	16	static
-../Core/Src/fsm_input_processing.c:80:6:input_processing_run	8	static

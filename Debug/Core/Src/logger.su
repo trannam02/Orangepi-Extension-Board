@@ -1,6 +1,0 @@
-../Core/Src/logger.c:20:6:Log_Init	16	static
-../Core/Src/logger.c:23:6:Log_SetLevel	16	static
-../Core/Src/logger.c:30:6:Log_Spec_Init	16	static
-../Core/Src/logger.c:33:6:Log_Spec_SetLevel	16	static
-../Core/Src/logger.c:39:6:Log_Special	16	static
-../Core/Src/logger.c:62:6:Log_Write	292	static

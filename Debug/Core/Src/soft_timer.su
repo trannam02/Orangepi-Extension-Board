@@ -1,5 +1,0 @@
-../Core/Src/soft_timer.c:6:6:setTimer	16	static
-../Core/Src/soft_timer.c:12:6:triggerTimerNow	16	static
-../Core/Src/soft_timer.c:16:9:getTimer	16	static
-../Core/Src/soft_timer.c:22:6:clearTimer	16	static
-../Core/Src/soft_timer.c:26:6:timerRun	16	static

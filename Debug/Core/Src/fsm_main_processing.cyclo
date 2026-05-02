@@ -1,5 +1,0 @@
-../Core/Src/fsm_main_processing.c:38:9:setListCoupler	2
-../Core/Src/fsm_main_processing.c:50:6:poll_processing_run	11
-../Core/Src/fsm_main_processing.c:122:6:longPress_processing_run	13
-../Core/Src/fsm_main_processing.c:173:6:main_processing_init	1
-../Core/Src/fsm_main_processing.c:185:6:main_processing_run	72

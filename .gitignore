@@ -1,7 +1,9 @@
 .settings/
 Debug/
 Drivers/
+Core/Startup/
 .cproject
 .mxproject
 .project
 *.ld
+*.launch

@@ -1,3 +1,0 @@
-../Core/Src/queue_utils.c:9:6:Queue_Init	16	static
-../Core/Src/queue_utils.c:15:6:Queue_Push	24	static
-../Core/Src/queue_utils.c:24:6:Queue_Pop	16	static

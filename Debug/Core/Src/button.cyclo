@@ -1,8 +1,0 @@
-../Core/Src/button.c:13:6:button_init	1
-../Core/Src/button.c:17:6:button_run	2
-../Core/Src/button.c:39:5:getButtonPressFlag	1
-../Core/Src/button.c:40:6:setButtonPressFlag	1
-../Core/Src/button.c:42:5:getButtonReleaseFlag	1
-../Core/Src/button.c:44:5:getButtonLongPressFlag	1
-../Core/Src/button.c:45:6:setButtonLongPressFlag	1
-../Core/Src/button.c:47:6:getKeyInput	13
