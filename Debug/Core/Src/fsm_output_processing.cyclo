@@ -3,7 +3,7 @@
 ../Core/Src/fsm_output_processing.c:48:6:outputUPLINK	6
 ../Core/Src/fsm_output_processing.c:64:6:knx_fsm_send_next_chunk	5
 ../Core/Src/fsm_output_processing.c:86:6:outputKNX	8
-../Core/Src/fsm_output_processing.c:106:6:outputRS485	6
-../Core/Src/fsm_output_processing.c:124:6:outputLed	18
-../Core/Src/fsm_output_processing.c:201:6:outputBuzzer	20
-../Core/Src/fsm_output_processing.c:275:6:setBuzzerPWM	2
+../Core/Src/fsm_output_processing.c:106:6:outputRS485	8
+../Core/Src/fsm_output_processing.c:129:6:outputLed	18
+../Core/Src/fsm_output_processing.c:206:6:outputBuzzer	20
+../Core/Src/fsm_output_processing.c:280:6:setBuzzerPWM	2

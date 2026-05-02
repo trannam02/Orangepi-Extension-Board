@@ -50,6 +50,9 @@
 #define BUZZER_OFF 0
 #define BUZZER_ON 1
 
+
+#define RS485_OUTPUT_INTERVAL MS(30)
+
 typedef enum {
     BUZZER_CODE_OFF = 0,
     BUZZER_CODE_SUCCESS, // Kêu "Tít - Tít" (âm thanh cao, nhanh)
@@ -63,6 +66,7 @@ extern BuzzerCode_t o_outputBuzzerType;
 
 /////////////////////// EXTERN ///////////////
 extern uint8_t o_outputLedType;
+
 
 // for orange pi uplink
 /////////////////////// FUNCTION ///////////////

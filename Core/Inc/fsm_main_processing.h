@@ -32,7 +32,7 @@
 
 #define MAX_RETRY_POLLING 3
 
-#define POLL_INTERVAL MS(30)
+#define POLL_INTERVAL MS(50)
 #define POLL_TIMEOUT MS(50)
 
 // for long press processing

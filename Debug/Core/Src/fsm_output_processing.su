@@ -4,6 +4,6 @@
 ../Core/Src/fsm_output_processing.c:64:6:knx_fsm_send_next_chunk	16	static
 ../Core/Src/fsm_output_processing.c:86:6:outputKNX	16	static
 ../Core/Src/fsm_output_processing.c:106:6:outputRS485	16	static
-../Core/Src/fsm_output_processing.c:124:6:outputLed	8	static
-../Core/Src/fsm_output_processing.c:201:6:outputBuzzer	8	static
-../Core/Src/fsm_output_processing.c:275:6:setBuzzerPWM	24	static
+../Core/Src/fsm_output_processing.c:129:6:outputLed	8	static
+../Core/Src/fsm_output_processing.c:206:6:outputBuzzer	8	static
+../Core/Src/fsm_output_processing.c:280:6:setBuzzerPWM	24	static

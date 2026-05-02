@@ -104,23 +104,28 @@ void outputKNX() {
 }
 
 void outputRS485() {
-	static uint8_t dma_rs485_buffer[MAX_BUFFER_LEN];
-	while(processed_rs485 < CONCURENCY_RATE+5){
-		processed_rs485++;
+    static uint8_t dma_rs485_buffer[MAX_BUFFER_LEN];
+    static uint8_t is_rs485_cooldown = 0;
 
-		if (o_RS485Queue.count > 0 && huart1.gState == HAL_UART_STATE_READY) {
+    if (is_rs485_cooldown && getTimer(6) == 1) {
+        clearTimer(6);
+        is_rs485_cooldown = 0;
+    }
 
-		        if (Queue_Pop(&o_RS485Queue, dma_rs485_buffer)) {
-		            uint8_t len = dma_rs485_buffer[0];
-		            if (len > 0) {
-		                HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, 1);
-		                HAL_UART_Transmit_DMA(&huart1, &dma_rs485_buffer[1], len);
-		            }
-		        }
-		    }
-	}
-
+    if (!is_rs485_cooldown && o_RS485Queue.count > 0 && huart1.gState == HAL_UART_STATE_READY) {
+        if (Queue_Pop(&o_RS485Queue, dma_rs485_buffer)) {
+            uint8_t len = dma_rs485_buffer[0];
+            if (len > 0) {
+                HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, 1);
+                HAL_UART_Transmit_DMA(&huart1, &dma_rs485_buffer[1], len);
+                is_rs485_cooldown = 1;
+                clearTimer(6);
+                setTimer(6, RS485_OUTPUT_INTERVAL);
+            }
+        }
+    }
 }
+
 void outputLed() {
     static uint8_t led_step = 0;
     static uint8_t last_led_type = LED_CODE_OFF;
