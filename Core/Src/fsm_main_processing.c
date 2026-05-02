@@ -62,12 +62,10 @@ void poll_processing_run() {
                     LOG_DEBUG("Goi POLL den coupler %d", coupler_arr[couplerX]);
 
                     clearTimer(3);
-                    setTimer(3, POLL_TIMEOUT); // getTimer(3) dùng làm timer timeout
+                    setTimer(3, POLL_TIMEOUT);
                     poll_state = POLL_STATE_WAIT_RESPONSE;
                 } else {
-                    // Nếu Queue đang đầy (kẹt), thử lại sau 1ms
-                	clearTimer(2);
-                    setTimer(2, POLL_INTERVAL);
+                	LOG_SPEC_INFO(LOG_CODE_QUEUE_RS485_PUSH_FAIL, HAL_GetTick());
                 }
             }
             break;
@@ -101,9 +99,12 @@ void poll_processing_run() {
 					}
 
 					// send report to PI
-					uint8_t coupler_disconnect_package[5] = {0x04, 0x0F, 0x03, coupler_arr[couplerX]};
+					uint8_t coupler_disconnect_package[5] = {0x04, 0x0E, 0x03, coupler_arr[couplerX]};
 					coupler_disconnect_package[4] = crc8(&coupler_disconnect_package[1], 3);
-					Queue_Push(&o_UPLINKQueue, coupler_disconnect_package, coupler_disconnect_package[0] + 1);
+					if(!Queue_Push(&o_UPLINKQueue, coupler_disconnect_package, coupler_disconnect_package[0] + 1)){
+						LOG_SPEC_INFO(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+					};
+
 				}
 
                 // Poll next coupler
@@ -126,24 +127,30 @@ void longPress_processing_run(){
 				// gui goi bat AP
 				uint8_t turnOnAP[6] = {5, 0x0E, 0x01, 0xAB, 0xBA};
 				turnOnAP[5] = crc8(&turnOnAP[1], 4);
-				Queue_Push(&o_UPLINKQueue, turnOnAP, turnOnAP[0] + 1);
+				if(!Queue_Push(&o_UPLINKQueue, turnOnAP, turnOnAP[0] + 1)){
+					LOG_SPEC_INFO(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+				};
 			}
 			if(longPressCounter == 3 && getButtonReleaseFlag(0)){
 				longPressCounter = 0;
 				if(system_state == SYSTEM_STATE_CONFIG){
-					LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_RUNNING, 0);
+					LOG_SPEC_DEBUG(LOG_CODE_SYSTEM_STATE_RUNNING, HAL_GetTick());
 					system_state = SYSTEM_STATE_RUNNING;
 					// gui goi tin chuyen sang che do phu hop
 					uint8_t switchToRunning[6] = {5, 0x0E, 0x01, 0xBE, 0xEF};
 					switchToRunning[5] = crc8(&switchToRunning[1], 4);
-					Queue_Push(&o_UPLINKQueue, switchToRunning, switchToRunning[0] + 1);
+					if(!Queue_Push(&o_UPLINKQueue, switchToRunning, switchToRunning[0] + 1)){
+						LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+					};
 				}else{
-					LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_CONFIG, 0);
+					LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_CONFIG, HAL_GetTick());
 					system_state = SYSTEM_STATE_CONFIG;
 					// gui goi tin chuyen sang che do phu hop
 					uint8_t switchToConfig[6] = {5, 0x0E, 0x01, 0xCA, 0xFE};
 					switchToConfig[5] = crc8(&switchToConfig[1], 4);
-					Queue_Push(&o_UPLINKQueue, switchToConfig, switchToConfig[0] + 1);
+					if(!Queue_Push(&o_UPLINKQueue, switchToConfig, switchToConfig[0] + 1)){
+						LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+					};
 				};
 			}
 			if(longPressCounter >= 4){
@@ -277,7 +284,9 @@ void main_processing_run() {
 						rxData[4] == 0xCA){
 						system_state = SYSTEM_STATE_CONFIG;
 						LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_CONFIG, HAL_GetTick());
-						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1);
+						if(!Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1)){
+							LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+						};
 					};
 				}
 
@@ -290,7 +299,9 @@ void main_processing_run() {
 						o_outputLedType = LED_CODE_OFF;
 						system_state = SYSTEM_STATE_RUNNING;
 						LOG_SPEC_INFO(LOG_CODE_SYSTEM_STATE_RUNNING, HAL_GetTick());
-						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1); // phan hoi goi tuong tu
+						if(Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1)){// phan hoi goi tuong tu
+							LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+						};
 						continue;
 					}
 
@@ -303,7 +314,9 @@ void main_processing_run() {
 						setListCoupler(&rxData[3], numberCoupler);
 						number_of_coupler = numberCoupler;
 
-						Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1); // phan hoi goi tuong tu
+						if(!Queue_Push(&o_UPLINKQueue, rxData, rxData[0] + 1)){
+							LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+						} // phan hoi goi tuong tu
 					}
 					continue;
 				}
@@ -319,6 +332,7 @@ void main_processing_run() {
 						LOG_WARN("ADD QUEUE OK");
 					}else{
 						LOG_WARN("QUEUE FULL");
+						LOG_SPEC_DEBUG(LOG_CODE_QUEUE_RS485_PUSH_FAIL, HAL_GetTick());
 					}
 					LOG_WARN("Downlink routed to RS485");
 					LOG_SPEC_INFO(LOG_CODE_DOWNLINK_ROUTE_TO_RS485, HAL_GetTick());
@@ -331,7 +345,9 @@ void main_processing_run() {
 					txData[0] = encoded_len;
 					memcpy(&txData[1], tpuart_buffer, encoded_len);
 
-					Queue_Push(&o_KNXQueue, txData, encoded_len + 1); // +1 byte length
+					if(!Queue_Push(&o_KNXQueue, txData, encoded_len + 1)){// +1 byte length
+						LOG_SPEC_DEBUG(LOG_CODE_QUEUE_KNX_PUSH_FAIL, HAL_GetTick());
+					}
 					LOG_WARN("Downlink routed to (KNX)");
 					LOG_SPEC_INFO(LOG_CODE_DOWNLINK_ROUTE_TO_KNX, HAL_GetTick());
                 }
@@ -431,7 +447,9 @@ void main_processing_run() {
                         txData[1] = HEADER_RS485;
                         memcpy(&txData[2], &rxData[2], payload_size - 1);
                         txData[3 + payload_size - 1] = crc8(&txData[1], payload_size + 1 - 1); // Tính CRC cho Header + Payload
-                        Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1);
+                        if(!Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1)){
+                        	LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+                        }
                     }
                     // Nếu không phải phản hồi mình cần -> Lệnh continue ngầm (hết vòng lặp)
                 }else{
@@ -480,7 +498,9 @@ void main_processing_run() {
                 memcpy(&txData[2], &rxData[1], payload_size);
                 txData[2 + payload_size] = crc8(&txData[1], payload_size + 1);
 
-                Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1);
+                if(!Queue_Push(&o_UPLINKQueue, txData, txData[0] + 1)){
+                	LOG_SPEC_DEBUG(LOG_CODE_QUEUE_UPLINK_PUSH_FAIL, HAL_GetTick());
+                }
             }
             state = STATE_WAITTING;
             break;

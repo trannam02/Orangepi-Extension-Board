@@ -144,7 +144,7 @@ int main(void)
   /* USER CODE BEGIN Init */
   MX_TIM1_Init();
 
-  HAL_Delay(9000);
+  HAL_Delay(1000);
 
   /* USER CODE END Init */
 
@@ -177,7 +177,7 @@ int main(void)
   HAL_GPIO_WritePin(KNX_RESETb_GPIO_Port, KNX_RESETb_Pin, SET);
 
   Log_Init(LOG_LEVEL_NONE);
-  Log_Spec_Init(LOG_SPEC_LEVEL_INFO);
+  Log_Spec_Init(LOG_SPEC_LEVEL_DEBUG);
 
   uartManualInit();
   button_init();

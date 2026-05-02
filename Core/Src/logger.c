@@ -54,7 +54,7 @@ void Log_Special(LogLevelSpecial_t level, LogCode_t code, uint32_t number){
 	buffer_spec[8] = (uint8_t)((number & 0x0000FF00) >> 8);
 	buffer_spec[9] = (uint8_t)((number & 0x000000FF));
 
-	buffer_spec[10] = crc8(&buffer_spec[1], 10);
+	buffer_spec[10] = crc8(&buffer_spec[1], 9);
 
  	Queue_Push(&o_UPLINKQueue, buffer_spec, buffer_spec[0] + 1);
 }

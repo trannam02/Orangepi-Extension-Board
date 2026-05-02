@@ -1822,8 +1822,6 @@ void main_processing_run() {
  8000d6a:	781b      	ldrb	r3, [r3, #0]
  8000d6c:	2b00      	cmp	r3, #0
  8000d6e:	d171      	bne.n	8000e54 <main_processing_run+0x304>
-
-					// kiem tra xem phai goi tin chuyen ve che do running khong
 					if(rxData[0] == 5 &&
  8000d70:	f897 30c0 	ldrb.w	r3, [r7, #192]	@ 0xc0
  8000d74:	2b05      	cmp	r3, #5
@@ -1929,8 +1927,6 @@ void main_processing_run() {
  8000e4c:	200010a4 	.word	0x200010a4
  8000e50:	2000084c 	.word	0x2000084c
 				}
-
-
 
                 if (header == HEADER_RS485) {
  8000e54:	f897 311a 	ldrb.w	r3, [r7, #282]	@ 0x11a
@@ -4064,8 +4060,8 @@ void Log_Special(LogLevelSpecial_t level, LogCode_t code, uint32_t number){
  8001d64:	4b0c      	ldr	r3, [pc, #48]	@ (8001d98 <Log_Special+0x8c>)
  8001d66:	725a      	strb	r2, [r3, #9]
 
-	buffer_spec[10] = crc8(&buffer_spec[1], 10);
- 8001d68:	210a      	movs	r1, #10
+	buffer_spec[10] = crc8(&buffer_spec[1], 9);
+ 8001d68:	2109      	movs	r1, #9
  8001d6a:	480c      	ldr	r0, [pc, #48]	@ (8001d9c <Log_Special+0x90>)
  8001d6c:	f7fe fb40 	bl	80003f0 <crc8>
  8001d70:	4603      	mov	r3, r0
@@ -4501,8 +4497,8 @@ int main(void)
   MX_TIM1_Init();
  80020b8:	f000 f89e 	bl	80021f8 <MX_TIM1_Init>
 
-  HAL_Delay(9000);
- 80020bc:	f242 3028 	movw	r0, #9000	@ 0x2328
+  HAL_Delay(1000);
+ 80020bc:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  80020c0:	f001 f9ac 	bl	800341c <HAL_Delay>
 
   /* USER CODE END Init */
@@ -4556,8 +4552,8 @@ int main(void)
   Log_Init(LOG_LEVEL_NONE);
  8002106:	2000      	movs	r0, #0
  8002108:	f7ff fde0 	bl	8001ccc <Log_Init>
-  Log_Spec_Init(LOG_SPEC_LEVEL_INFO);
- 800210c:	2003      	movs	r0, #3
+  Log_Spec_Init(LOG_SPEC_LEVEL_DEBUG);
+ 800210c:	2004      	movs	r0, #4
  800210e:	f7ff fded 	bl	8001cec <Log_Spec_Init>
 
   uartManualInit();
