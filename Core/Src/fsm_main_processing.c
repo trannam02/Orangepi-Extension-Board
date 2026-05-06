@@ -65,6 +65,9 @@ void poll_processing_run() {
                     setTimer(3, POLL_TIMEOUT);
                     poll_state = POLL_STATE_WAIT_RESPONSE;
                 } else {
+                	clearTimer(2);
+                	clearTimer(3);
+                	setTimer(2, POLL_INTERVAL);
                 	LOG_SPEC_INFO(LOG_CODE_QUEUE_RS485_PUSH_FAIL, HAL_GetTick());
                 }
             }

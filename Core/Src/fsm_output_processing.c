@@ -111,7 +111,6 @@ void outputRS485() {
         clearTimer(6);
         is_rs485_cooldown = 0;
     }
-
     if (!is_rs485_cooldown && o_RS485Queue.count > 0 && huart1.gState == HAL_UART_STATE_READY) {
         if (Queue_Pop(&o_RS485Queue, dma_rs485_buffer)) {
             uint8_t len = dma_rs485_buffer[0];
@@ -120,7 +119,7 @@ void outputRS485() {
                 HAL_UART_Transmit_DMA(&huart1, &dma_rs485_buffer[1], len);
                 is_rs485_cooldown = 1;
                 clearTimer(6);
-                setTimer(6, RS485_OUTPUT_INTERVAL);
+                setTimer(5, MS(30));
             }
         }
     }

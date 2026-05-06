@@ -6,7 +6,7 @@
 
 // USER SETTING
 
-#define MAX_TIMER 6
+#define MAX_TIMER 7
 #define TICK 100 // 1 tick timer = 100uS
 
 // convert time
@@ -28,6 +28,7 @@ void timerRun();
  * Timer 3: Send KNX package
  * Timer 4: Receive KNX package
  * Timer 5: Buzzer timing
+ * Timer 6: Output timing
  * */
 
 #endif

@@ -11,6 +11,7 @@
 #include <string.h>
 #include "queue_utils.h"
 #include "fsm_input_processing.h"
+#include "crc.h"
 
 // Buffer đệm để chứa chuỗi sau khi format
 // Tăng lên nếu bạn log những dòng rất dài
@@ -34,9 +35,8 @@ void Log_Spec_SetLevel(LogLevel_t level) {
 	system_log_level_special = level;
 }
 
-static uint8_t buffer_spec[11] = {0,0x0E,0x04,0,0,0,0,0,0,0,0};
-
 void Log_Special(LogLevelSpecial_t level, LogCode_t code, uint32_t number){
+	static uint8_t buffer_spec[11] = {0,0x0E,0x04,0,0,0,0,0,0,0,0};
 	if (level > system_log_level_special) {
 		return;
 	}
@@ -67,7 +67,7 @@ void Log_Write(LogLevel_t level, const char *format, ...) {
     }
 
     // 2. Chuẩn bị các biến
-    char buffer[LOG_BUFFER_SIZE];
+    uint8_t buffer[LOG_BUFFER_SIZE];
     uint16_t len = 1;
     va_list args;
 
@@ -95,6 +95,6 @@ void Log_Write(LogLevel_t level, const char *format, ...) {
     }
     buffer[0] = len - 1;
     // 6. Gửi ra UART (Blocking Mode như bạn yêu cầu)
-    Queue_Push(&o_UPLINKQueue, buffer, buffer[0] + 1);
+    Queue_Push(&o_UPLINKQueue, (uint8_t*)buffer, buffer[0] + 1);
 //    HAL_UART_Transmit(LOG_UART, (uint8_t*)buffer, len, HAL_MAX_DELAY);
 }

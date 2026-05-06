@@ -20,9 +20,6 @@ static uint8_t state = STATE_INPUT_INIT;
 #define KNX_RX_TIMEOUT MS(50)
 #define KNX_MAX_ACC_SIZE 64
 
-static uint8_t knx_rx_acc[KNX_MAX_ACC_SIZE]; // Bộ đệm gom toàn bộ gói tin
-static uint16_t knx_rx_acc_len = 0;          // Chiều dài hiện tại của bộ đệm gom
-static uint8_t is_receiving = 0;             // Cờ đánh dấu đang trong quá trình gom mảng
 static uint16_t old_ptr = 0;
 
 static uint8_t out_data[KNX_MAX_ACC_SIZE];
